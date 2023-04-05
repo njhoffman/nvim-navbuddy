@@ -165,7 +165,6 @@ local get_current_buffers = function(active_bufnr)
       -- numbers_text = { text = buffer .. " ", hl = "SidebarNvimBuffersNumber" }
 
       local icon = { devicons.get_icon(bufname) }
-      vim.dbglog(active_bufnr, bufnr, tonumber(active_bufnr) == tonumber(bufnr))
       loclist_items[#loclist_items + 1] = {
         group = "buffers",
         display = {

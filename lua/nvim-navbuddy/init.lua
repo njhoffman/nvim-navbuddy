@@ -19,10 +19,12 @@ local function setup(user_config)
       config.window.sections.left.border ~= nil
       or config.window.sections.mid.border ~= nil
       or config.window.sections.right.border ~= nil
+      or config.window.sections.title.border ~= nil
     then
       config.window.sections.left.border = config.window.sections.left.border or "none"
       config.window.sections.mid.border = config.window.sections.mid.border or "none"
       config.window.sections.right.border = config.window.sections.right.border or "none"
+      config.window.sections.title.border = config.window.sections.title.border or "none"
     end
 
     if user_config.icons ~= nil then

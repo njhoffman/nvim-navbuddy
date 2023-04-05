@@ -8,6 +8,7 @@ local config = {
     position = "50%",
     scrolloff = nil,
     sections = {
+      title = {},
       left = {
         size = "20%",
       },

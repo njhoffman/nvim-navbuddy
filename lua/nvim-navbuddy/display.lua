@@ -6,6 +6,7 @@ local nui_text = require("nui.text")
 -- local utils = require("nvim-navbuddy.utils")
 local state = require("nvim-navbuddy.state")
 local buffer = require("nvim-navbuddy.buffer")
+local border = require("nvim-navbuddy.border")
 
 local display = {}
 
@@ -18,10 +19,21 @@ function display:new(obj)
 
   local config = obj.config
 
+  local title_popup = nui_popup({
+    focusable = false,
+    border = config.window.sections.title.border or border.get_border(config.window.border, "title"),
+    win_options = {
+      winhighlight = "FloatBorder:NavbuddyFloatBorder",
+    },
+    buf_options = {
+      modifiable = false,
+    },
+  })
+
   -- NUI elements
   local left_popup = nui_popup({
     focusable = false,
-    border = config.window.sections.left.border or buffer.get_border(config.window.border, "left"),
+    border = config.window.sections.left.border or border.get_border(config.window.border, "left"),
     win_options = {
       winhighlight = "FloatBorder:NavbuddyFloatBorder",
     },
@@ -32,7 +44,7 @@ function display:new(obj)
 
   local mid_popup = nui_popup({
     enter = true,
-    border = config.window.sections.mid.border or buffer.get_border(config.window.border, "mid"),
+    border = config.window.sections.mid.border or border.get_border(config.window.border, "mid"),
     win_options = {
       winhighlight = "FloatBorder:NavbuddyFloatBorder",
       scrolloff = config.window.scrolloff,
@@ -58,12 +70,11 @@ function display:new(obj)
     lsp_name = nil
   end
 
+  local right_border = config.window.sections.right.border or border.get_border(config.window.border, "right")
+  right_border.text = lsp_name
   local right_popup = nui_popup({
     focusable = false,
-    border = {
-      style = config.window.sections.right.border or buffer.get_border(config.window.border, "right"),
-      text = lsp_name,
-    },
+    border = right_border,
     win_options = {
       winhighlight = "FloatBorder:NavbuddyFloatBorder",
     },
@@ -73,19 +84,27 @@ function display:new(obj)
   })
 
   -- utils.get_layout_opts(),
+
   local layout = nui_layout(
     {
+      relative = "editor",
       size = {
-        width = "60%",
-        height = "15",
+        width = 80,
+        height = 15,
       },
       position = "100%",
     },
     nui_layout.Box({
-      nui_layout.Box(left_popup, { size = { width = "30%" } }),
-      nui_layout.Box(mid_popup, { size = { width = "40%" } }),
-      nui_layout.Box(right_popup, { size = { width = "30%" } }),
-    }, { dir = "row" })
+      nui_layout.Box(title_popup, { size = {
+        height = 3,
+        width = "100%",
+      } }),
+      nui_layout.Box({
+        nui_layout.Box(left_popup, { size = { width = "30%" } }),
+        nui_layout.Box(mid_popup, { size = { width = "40%" } }),
+        nui_layout.Box(right_popup, { grow = 1 }),
+      }, { dir = "row", size = { height = 13 } }),
+    }, { dir = "col" })
   )
 
   obj.layout = layout
@@ -97,6 +116,7 @@ function display:new(obj)
   obj.left = left_popup
   obj.mid = mid_popup
   obj.right = right_popup
+  obj.title = title_popup
   obj.state = {
     leaving_window_for_action = false,
     leaving_window_for_reorientation = false,
@@ -129,7 +149,6 @@ function display:new(obj)
     callback = function()
       local cursor_pos = vim.api.nvim_win_get_cursor(obj.mid.winid)
       if obj.focus_node ~= obj.focus_node.parent.children[cursor_pos[1]] then
-        vim.dbglog("moved")
         obj.focus_node = obj.focus_node.parent.children[cursor_pos[1]]
         -- obj.layout:update(utils.get_layout_opts(obj.focus_node))
         obj:redraw()
@@ -272,6 +291,7 @@ function display:redraw()
   else
     buffer.fill_lsp(self.left, node.parent, self.config)
   end
+  buffer.update_title(self.title, node, self.config)
 end
 
 function display:close()
