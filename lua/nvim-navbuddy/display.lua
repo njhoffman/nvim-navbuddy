@@ -112,6 +112,7 @@ function display:new(obj)
   left_popup.panel = "left"
   mid_popup.panel = "mid"
   right_popup.panel = "right"
+  title_popup.panel = "title"
 
   obj.left = left_popup
   obj.mid = mid_popup
@@ -160,6 +161,20 @@ function display:new(obj)
       obj:focus_range()
     end,
   })
+  vim.api.nvim_create_autocmd("VimResized", {
+    group = augroup,
+    buffer = self.forbuf,
+    callback = function(arg)
+      if
+        obj.state.leaving_window_for_action == false
+        and obj.state.leaving_window_for_reorientation == false
+        and obj.state.closed == false
+      then
+        obj:close()
+      end
+    end,
+  })
+
   vim.api.nvim_create_autocmd("BufLeave", {
     group = augroup,
     buffer = obj.mid.bufnr,
