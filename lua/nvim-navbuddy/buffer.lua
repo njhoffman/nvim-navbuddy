@@ -27,7 +27,12 @@ local function fill_lsp(buf, node, config)
   for i, child_node in ipairs(parent.children) do
     local sfx = navic.adapt_lsp_num_to_str(child_node.kind)
     if config.theme == "hl-line1" then
-      vim.api.nvim_buf_add_highlight(buf.bufnr, state.ns, "Navbuddy" .. sfx, i - 1, 0, -1)
+      if buf.panel == "mid" then
+        vim.api.nvim_buf_add_highlight(buf.bufnr, state.ns, "Navbuddy" .. sfx, i - 1, 0, -1)
+      else
+        vim.api.nvim_buf_add_highlight(buf.bufnr, state.ns, "Navbuddy" .. sfx .. "Dim", i - 1, 0, -1)
+      end
+
       -- u.add_hl(buf.bufnr, namespace, "Navbuddy" .. sfx .. 'Text', i - 1, 0, 1)
       -- u.add_hl(buf.bufnr, namespace, "Navbuddy" .. sfx, i - 1, 1, 4)
       -- u.add_hl(buf.bufnr, namespace, "Navbuddy" .. sfx .. 'Text', i - 1, 0, 1)
@@ -39,9 +44,20 @@ local function fill_lsp(buf, node, config)
   if cursor_pos[1] ~= node.index then
     cursor_pos[1] = node.index
   end
-
-  vim.api.nvim_buf_add_highlight(buf.bufnr, state.ns, "NavbuddyCursorLine", cursor_pos[1] - 1, 0, -1)
-  vim.api.nvim_buf_set_extmark(buf.bufnr, state.ns, cursor_pos[1] - 1, #lines[cursor_pos[1]], { end_row = cursor_pos[1], hl_eol = true, hl_group = "NavbuddyCursorLine" .. navic.adapt_lsp_num_to_str(node.kind) })
+  vim.api.nvim_buf_set_extmark(
+    buf.bufnr,
+    state.ns,
+    cursor_pos[1] - 1,
+    0,
+    { end_row = cursor_pos[1], hl_eol = true, hl_group = "Navbuddy" .. navic.adapt_lsp_num_to_str(node.kind) }
+  )
+  vim.api.nvim_buf_set_extmark(
+    buf.bufnr,
+    state.ns,
+    cursor_pos[1] - 1,
+    0,
+    { end_row = cursor_pos[1], hl_eol = true, hl_group = "NavbuddyCursorLine" }
+  )
   vim.api.nvim_win_set_cursor(buf.winid, cursor_pos)
 end
 

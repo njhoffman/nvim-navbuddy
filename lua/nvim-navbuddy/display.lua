@@ -47,7 +47,14 @@ function display:new(obj)
     bottom_align = "right",
   }
 
-  if config.window.sections.right.border == "none" or config.window.border == "none" or config.window.sections.right.border == "shadow" or config.window.border == "shadow" or config.window.sections.right.border == "solid" or config.window.border == "solid" then
+  if
+    config.window.sections.right.border == "none"
+    or config.window.border == "none"
+    or config.window.sections.right.border == "shadow"
+    or config.window.border == "shadow"
+    or config.window.sections.right.border == "solid"
+    or config.window.border == "solid"
+  then
     lsp_name = nil
   end
 
@@ -82,6 +89,11 @@ function display:new(obj)
   )
 
   obj.layout = layout
+
+  left_popup.panel = "left"
+  mid_popup.panel = "mid"
+  right_popup.panel = "right"
+
   obj.left = left_popup
   obj.mid = mid_popup
   obj.right = right_popup
@@ -133,7 +145,11 @@ function display:new(obj)
     group = augroup,
     buffer = obj.mid.bufnr,
     callback = function()
-      if obj.state.leaving_window_for_action == false and obj.state.leaving_window_for_reorientation == false and obj.state.closed == false then
+      if
+        obj.state.leaving_window_for_action == false
+        and obj.state.leaving_window_for_reorientation == false
+        and obj.state.closed == false
+      then
         obj:close()
       end
     end,
@@ -168,10 +184,31 @@ function display:focus_range()
       local highlight, range = unpack(v)
 
       if range["start"].line == range["end"].line then
-        vim.api.nvim_buf_add_highlight(self.for_buf, state.ns, highlight, range["start"].line - 1, range["start"].character, range["end"].character)
+        vim.api.nvim_buf_add_highlight(
+          self.for_buf,
+          state.ns,
+          highlight,
+          range["start"].line - 1,
+          range["start"].character,
+          range["end"].character
+        )
       else
-        vim.api.nvim_buf_add_highlight(self.for_buf, state.ns, highlight, range["start"].line - 1, range["start"].character, -1)
-        vim.api.nvim_buf_add_highlight(self.for_buf, state.ns, highlight, range["end"].line - 1, 0, range["end"].character)
+        vim.api.nvim_buf_add_highlight(
+          self.for_buf,
+          state.ns,
+          highlight,
+          range["start"].line - 1,
+          range["start"].character,
+          -1
+        )
+        vim.api.nvim_buf_add_highlight(
+          self.for_buf,
+          state.ns,
+          highlight,
+          range["end"].line - 1,
+          0,
+          range["end"].character
+        )
         for i = range["start"].line, range["end"].line - 2, 1 do
           vim.api.nvim_buf_add_highlight(self.for_buf, state.ns, highlight, i, 0, -1)
         end
@@ -195,7 +232,10 @@ function display:focus_range()
         local mid_line = bit.rshift(self.focus_node.scope["start"].line + self.focus_node.scope["end"].line, 1)
         vim.api.nvim_win_set_cursor(self.for_win, { mid_line, 0 })
         vim.api.nvim_command("normal! zz")
-        vim.api.nvim_win_set_cursor(self.for_win, { self.focus_node.name_range["start"].line, self.focus_node.name_range["start"].character })
+        vim.api.nvim_win_set_cursor(
+          self.for_win,
+          { self.focus_node.name_range["start"].line, self.focus_node.name_range["start"].character }
+        )
       end
     elseif self.config.source_buffer.reorient == "mid" then
       vim.api.nvim_command("normal! zz")
