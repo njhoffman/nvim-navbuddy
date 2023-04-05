@@ -3,7 +3,7 @@ local nui_popup = require("nui.popup")
 local nui_layout = require("nui.layout")
 local nui_text = require("nui.text")
 
-local utils = require("nvim-navbuddy.utils")
+-- local utils = require("nvim-navbuddy.utils")
 local state = require("nvim-navbuddy.state")
 local buffer = require("nvim-navbuddy.buffer")
 
@@ -35,6 +35,7 @@ function display:new(obj)
     border = config.window.sections.mid.border or buffer.get_border(config.window.border, "mid"),
     win_options = {
       winhighlight = "FloatBorder:NavbuddyFloatBorder",
+      scrolloff = config.window.scrolloff,
     },
     buf_options = {
       modifiable = false,
@@ -88,6 +89,7 @@ function display:new(obj)
     leaving_window_for_action = false,
     leaving_window_for_reorientation = false,
     closed = false,
+    source_buffer_scrolloff = nil,
     user_gui_cursor = nil,
   }
 
@@ -100,6 +102,12 @@ function display:new(obj)
     vim.api.nvim_set_option("guicursor", "a:NavbuddyCursor")
   end
 
+  -- User Scrolloff
+  if config.source_buffer.scrolloff then
+    obj.state.source_buffer_scrolloff = vim.api.nvim_get_option("scrolloff")
+    vim.api.nvim_set_option("scrolloff", config.source_buffer.scrolloff)
+  end
+
   -- Autocmds
   local augroup = vim.api.nvim_create_augroup("Navbuddy", { clear = false })
   vim.api.nvim_clear_autocmds({ buffer = obj.mid.bufnr })
@@ -107,14 +115,15 @@ function display:new(obj)
     group = augroup,
     buffer = obj.mid.bufnr,
     callback = function()
-      obj.focus_node.parent.memory = obj.focus_node.index
-
       local cursor_pos = vim.api.nvim_win_get_cursor(obj.mid.winid)
       if obj.focus_node ~= obj.focus_node.parent.children[cursor_pos[1]] then
+        vim.dbglog("moved")
         obj.focus_node = obj.focus_node.parent.children[cursor_pos[1]]
         -- obj.layout:update(utils.get_layout_opts(obj.focus_node))
         obj:redraw()
       end
+
+      obj.focus_node.parent.memory = obj.focus_node.index
 
       obj:clear_highlights()
       obj:focus_range()
@@ -138,8 +147,6 @@ function display:new(obj)
   end
 
   -- Display
-  -- local opts = utils.get_layout_opts(obj.focus_node)
-  -- layout:update(opts)
   layout:mount()
   obj:redraw()
   obj:focus_range()
@@ -207,28 +214,32 @@ end
 
 function display:redraw()
   local node = self.focus_node
-  buffer.fill(self.mid, node, self.config)
+  buffer.fill_lsp(self.mid, node, self.config)
 
   if node.children then
     if node.memory then
-      buffer.fill(self.right, node.children[node.memory], self.config)
+      buffer.fill_lsp(self.right, node.children[node.memory], self.config)
     else
-      buffer.fill(self.right, node.children[1], self.config)
+      buffer.fill_lsp(self.right, node.children[1], self.config)
     end
   else
     buffer.clear(self.right)
   end
 
   if node.parent.is_root then
-    buffer.clear(self.left)
+    -- buffer.clear(self.left)
+    buffer.fill_curbufs(self.left, self.for_buf, self.config)
   else
-    buffer.fill(self.left, node.parent, self.config)
+    buffer.fill_lsp(self.left, node.parent, self.config)
   end
 end
 
 function display:close()
   self.state.closed = true
   vim.api.nvim_set_option("guicursor", self.state.user_gui_cursor)
+  if self.state.source_buffer_scrolloff then
+    vim.api.nvim_set_option("scrolloff", self.state.source_buffer_scrolloff)
+  end
   self.layout:unmount()
   self:clear_highlights()
 end

@@ -116,6 +116,77 @@ local get_layout_opts = function(focus_node)
   return opts
 end
 
+local get_current_buffers = function(active_bufnr)
+  local devicons = require("nvim-web-devicons")
+
+  local loclist_items = {}
+
+  local bufnrs = vim.tbl_filter(function(b)
+    return 1 == vim.fn.buflisted(b)
+  end, vim.api.nvim_list_bufs())
+
+  for _, bufnr in ipairs(bufnrs) do
+    -- local bufname = entry.info.name ~= "" and entry.info.name or "[No Name]"
+    -- local hidden = entry.info.hidden == 1 and "h" or "a"
+    -- local readonly = vim.api.nvim_buf_get_option(entry.bufnr, "readonly") and "=" or " "
+    -- local changed = entry.info.changed == 1 and "+" or " "
+    -- local indicator = entry.flag .. hidden .. readonly .. changed
+    local ignored = false
+    local bufname = vim.api.nvim_buf_get_name(bufnr)
+    if bufname == "" then
+      ignored = true
+    end
+    -- always ignore terminals
+    if string.match(bufname, "term://.*") then
+      ignored = true
+    end
+
+    if not ignored then
+      local name_hl = "BuddyNormal"
+      local modified = ""
+
+      -- if bufnr == current_buffer then
+      --   name_hl = "BuddyBuffersActive"
+      -- end
+
+      if vim.api.nvim_buf_get_option(bufnr, "modified") then
+        modified = " *"
+      end
+
+      -- sorting = "id"
+      local order = bufnr -- if config["buffers"].sorting == "name" then
+      --   order = bufname
+      -- end
+
+      local fileparts = vim.split(bufname, "/")
+      local filename = fileparts[#fileparts]
+
+      -- local numbers_text = {}
+      -- numbers_text = { text = buffer .. " ", hl = "SidebarNvimBuffersNumber" }
+
+      local icon = { devicons.get_icon(bufname) }
+      vim.dbglog(active_bufnr, bufnr, tonumber(active_bufnr) == tonumber(bufnr))
+      loclist_items[#loclist_items + 1] = {
+        group = "buffers",
+        display = {
+          { text = icon[1], hl = icon[2] },
+          -- numbers_text,
+          { text = filename, hl = icon[2] },
+        },
+        data = {
+          buffer = bufnr,
+          filepath = bufname,
+          name = filename,
+          current = tonumber(active_bufnr) == tonumber(bufnr),
+        },
+        order = order,
+      }
+    end
+  end
+  return loclist_items
+end
+
 return {
+  get_current_buffers = get_current_buffers,
   get_layout_opts = get_layout_opts,
 }
