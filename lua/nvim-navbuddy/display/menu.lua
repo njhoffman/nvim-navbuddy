@@ -23,7 +23,8 @@ function display:new(obj)
     focusable = false,
     border = config.window.sections.title.border or border.get_border(config.window.border, "title"),
     win_options = {
-      winhighlight = "FloatBorder:NavbuddyFloatBorder",
+      winhighlight = "Normal:NavbuddyNormalFloat,FloatBorder:NavbuddyFloatBorder",
+      wrap = false,
     },
     buf_options = {
       modifiable = false,
@@ -35,7 +36,8 @@ function display:new(obj)
     focusable = false,
     border = config.window.sections.left.border or border.get_border(config.window.border, "left"),
     win_options = {
-      winhighlight = "FloatBorder:NavbuddyFloatBorder",
+      winhighlight = "Normal:NavbuddyNormalFloat,FloatBorder:NavbuddyFloatBorder",
+      wrap = false,
     },
     buf_options = {
       modifiable = false,
@@ -46,7 +48,8 @@ function display:new(obj)
     enter = true,
     border = config.window.sections.mid.border or border.get_border(config.window.border, "mid"),
     win_options = {
-      winhighlight = "FloatBorder:NavbuddyFloatBorder",
+      winhighlight = "Normal:NavbuddyNormalFloat,FloatBorder:NavbuddyFloatBorder",
+      wrap = false,
       scrolloff = config.window.scrolloff,
     },
     buf_options = {
@@ -76,7 +79,8 @@ function display:new(obj)
     focusable = false,
     border = right_border,
     win_options = {
-      winhighlight = "FloatBorder:NavbuddyFloatBorder",
+      winhighlight = "Normal:NavbuddyNormalFloat,FloatBorder:NavbuddyFloatBorder",
+      wrap = false,
     },
     buf_options = {
       modifiable = false,
@@ -196,6 +200,10 @@ function display:new(obj)
     end)
   end
 
+  if not vim.api.nvim_win_is_valid(obj.for_win) then
+    return obj:close()
+  end
+
   -- Display
   layout:mount()
   obj:redraw()
@@ -251,34 +259,69 @@ function display:focus_range()
   end
 
   if self.config.source_buffer.follow_node then
-    local last_range = ranges[#ranges][2]
-    vim.api.nvim_win_set_cursor(self.for_win, { last_range["start"].line, last_range["start"].character })
+    self:reorient(self.for_win, self.config.source_buffer.reorient)
+  end
+end
 
-    self.state.leaving_window_for_reorientation = true
-    vim.api.nvim_set_current_win(self.for_win)
+function display:reorient(ro_win, reorient_method)
+  vim.api.nvim_win_set_cursor(
+    ro_win,
+    { self.focus_node.name_range["start"].line, self.focus_node.name_range["start"].character }
+  )
 
-    if self.config.source_buffer.reorient == "smart" then
-      local total_lines = self.focus_node.scope["end"].line - self.focus_node.scope["start"].line + 1
+  self.state.leaving_window_for_reorientation = true
+  vim.api.nvim_set_current_win(ro_win)
 
-      if total_lines >= vim.api.nvim_win_get_height(self.for_win) then
-        vim.api.nvim_command("normal! zt")
-      else
-        local mid_line = bit.rshift(self.focus_node.scope["start"].line + self.focus_node.scope["end"].line, 1)
-        vim.api.nvim_win_set_cursor(self.for_win, { mid_line, 0 })
-        vim.api.nvim_command("normal! zz")
-        vim.api.nvim_win_set_cursor(
-          self.for_win,
-          { self.focus_node.name_range["start"].line, self.focus_node.name_range["start"].character }
-        )
-      end
-    elseif self.config.source_buffer.reorient == "mid" then
-      vim.api.nvim_command("normal! zz")
-    elseif self.config.source_buffer.reorient == "top" then
+  if reorient_method == "smart" then
+    local total_lines = self.focus_node.scope["end"].line - self.focus_node.scope["start"].line + 1
+
+    if total_lines >= vim.api.nvim_win_get_height(ro_win) then
       vim.api.nvim_command("normal! zt")
+    else
+      local mid_line = bit.rshift(self.focus_node.scope["start"].line + self.focus_node.scope["end"].line, 1)
+      vim.api.nvim_win_set_cursor(ro_win, { mid_line, 0 })
+      vim.api.nvim_command("normal! zz")
+      vim.api.nvim_win_set_cursor(
+        ro_win,
+        { self.focus_node.name_range["start"].line, self.focus_node.name_range["start"].character }
+      )
     end
+  elseif reorient_method == "mid" then
+    vim.api.nvim_command("normal! zz")
+  elseif reorient_method == "top" then
+    vim.api.nvim_command("normal! zt")
+  end
 
-    vim.api.nvim_set_current_win(self.mid.winid)
-    self.state.leaving_window_for_reorientation = false
+  vim.api.nvim_set_current_win(self.mid.winid)
+  self.state.leaving_window_for_reorientation = false
+end
+
+function display:show_preview()
+  vim.api.nvim_win_set_buf(self.right.winid, self.for_buf)
+
+  vim.api.nvim_win_set_option(
+    self.right.winid,
+    "winhighlight",
+    "Normal:NavbuddyNormalFloat,FloatBorder:NavbuddyFloatBorder"
+  )
+  vim.api.nvim_win_set_option(self.right.winid, "signcolumn", "no")
+  vim.api.nvim_win_set_option(self.right.winid, "foldlevel", 100)
+  vim.api.nvim_win_set_option(self.right.winid, "wrap", false)
+
+  self:reorient(self.right.winid, "smart")
+end
+
+function display:hide_preview()
+  vim.api.nvim_win_set_buf(self.right.winid, self.right.bufnr)
+  local node = self.focus_node
+  if node.children then
+    if node.memory then
+      buffer.fill_lsp(self.right, node.children[node.memory], self.config)
+    else
+      buffer.fill_lsp(self.right, node.children[1], self.config)
+    end
+  else
+    buffer.clear(self.right)
   end
 end
 
@@ -290,23 +333,38 @@ function display:redraw()
   local node = self.focus_node
   buffer.fill_lsp(self.mid, node, self.config)
 
-  if node.children then
-    if node.memory then
-      buffer.fill_lsp(self.right, node.children[node.memory], self.config)
-    else
-      buffer.fill_lsp(self.right, node.children[1], self.config)
-    end
+  local preview_method = self.config.window.sections.right.preview
+
+  if preview_method == "always" then
+    self:show_preview()
   else
-    buffer.clear(self.right)
+    if node.children then
+      if node.memory then
+        buffer.fill_lsp(self.right, node.children[node.memory], self.config)
+      else
+        buffer.fill_lsp(self.right, node.children[1], self.config)
+      end
+    else
+      if preview_method == "leaf" then
+        self:show_preview()
+      else
+        buffer.clear(self.right)
+      end
+    end
   end
 
   if node.parent.is_root then
     -- buffer.clear(self.left)
-    buffer.fill_curbufs(self.left, self.for_buf, self.config)
+    buffer.fill_files(self.left, self.for_buf, self.config)
   else
     buffer.fill_lsp(self.left, node.parent, self.config)
   end
-  buffer.update_title(self.title, node, self.config)
+  local winsize = {
+    w = vim.api.nvim_win_get_width(self.title.winid),
+    h = vim.api.nvim_win_get_height(self.title.winid),
+  }
+  local opts = { winsize = winsize, align = "center" }
+  buffer.fill_title(self.title, node, self.config, opts)
 end
 
 function display:close()

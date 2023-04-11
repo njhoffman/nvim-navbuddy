@@ -82,6 +82,18 @@ local function get_border(style, section)
         border_chars.left[style],
       },
     },
+    nav_title = {
+      style = {
+        border_chars.top_left[style],
+        border_chars.top[style],
+        border_chars.top_right[style],
+        border_chars.right[style],
+        border_chars.right[style],
+        border_chars.bottom[style],
+        border_chars.left[style],
+        border_chars.left[style],
+      },
+    },
     left = {
       style = {
         border_chars.blank,

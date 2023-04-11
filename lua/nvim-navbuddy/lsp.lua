@@ -1,7 +1,8 @@
 local navic = require("nvim-navic.lib")
 local nui_menu = require("nui.menu")
 
-local display = require("nvim-navbuddy.display")
+local menu_display = require("nvim-navbuddy.display.menu")
+local title_display = require("nvim-navbuddy.display.title")
 local state = require("nvim-navbuddy.state")
 local config = require("nvim-navbuddy.config")
 
@@ -57,7 +58,7 @@ local function choose_lsp_menu(for_buf, make_request)
   menu:mount()
 end
 
-local function request(for_buf, handler)
+local function request(for_buf, _handler)
   local function make_request(client)
     navic.request_symbol(for_buf, function(bufnr, symbols)
       navic.update_data(bufnr, symbols)
@@ -66,7 +67,7 @@ local function request(for_buf, handler)
 
       local curr_node = context_data[#context_data]
 
-      handler(for_buf, curr_node, client.name)
+      _handler(for_buf, curr_node, client.name)
     end, client)
   end
 
@@ -98,7 +99,7 @@ local function request(for_buf, handler)
   end
 end
 
-local function handler(bufnr, curr_node, lsp_name)
+local function menu_handler(bufnr, curr_node, lsp_name)
   if curr_node.is_root then
     if curr_node.children then
       local curr_line = vim.api.nvim_win_get_cursor(0)[1]
@@ -118,7 +119,36 @@ local function handler(bufnr, curr_node, lsp_name)
     end
   end
 
-  display:new({
+  menu_display:new({
+    for_buf = bufnr,
+    for_win = vim.api.nvim_get_current_win(),
+    start_cursor = vim.api.nvim_win_get_cursor(vim.api.nvim_get_current_win()),
+    focus_node = curr_node,
+    config = config,
+    lsp_name = lsp_name,
+  })
+end
+
+local function title_handler(bufnr, curr_node, lsp_name)
+  if curr_node.is_root then
+    if curr_node.children then
+      local curr_line = vim.api.nvim_win_get_cursor(0)[1]
+      local closest_dist = math.abs(curr_line - curr_node.children[1].scope["start"].line)
+      local closest_node = curr_node.children[1]
+
+      for _, node in ipairs(curr_node.children) do
+        if math.abs(curr_line - node.scope["start"].line) < closest_dist then
+          closest_dist = math.abs(curr_line - node.scope["start"].line)
+          closest_node = node
+        end
+      end
+      curr_node = closest_node
+    else
+      return
+    end
+  end
+
+  title_display:new({
     for_buf = bufnr,
     for_win = vim.api.nvim_get_current_win(),
     start_cursor = vim.api.nvim_win_get_cursor(vim.api.nvim_get_current_win()),
@@ -130,7 +160,11 @@ end
 
 local function open(bufnr)
   bufnr = bufnr or vim.api.nvim_get_current_buf()
-  request(bufnr, handler)
+  if state.mode == "title" then
+    request(bufnr, title_handler)
+  else
+    request(bufnr, menu_handler)
+  end
 end
 
 local function attach(client, bufnr)

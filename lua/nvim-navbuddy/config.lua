@@ -2,6 +2,14 @@ local actions = require("nvim-navbuddy.actions")
 
 local config = {
   theme = "default", -- default, hl-line1, hl-icon1, hl-icon2
+  node_markers = {
+    enabled = true,
+    icons = {
+      leaf = "  ",
+      leaf_selected = " → ",
+      branch = " ",
+    },
+  },
   window = {
     border = "single",
     size = "60%",
@@ -15,7 +23,9 @@ local config = {
       mid = {
         size = "40%",
       },
-      right = {},
+      right = {
+        -- preview = "leaf",
+      },
     },
   },
   icons = {
