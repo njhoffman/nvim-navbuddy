@@ -40,7 +40,7 @@ local function highlight_setup()
     local navic_ok, navic_hl = pcall(get_color_from_hl, "NavicIcons" .. navic_num(lsp_num))
     if not navbuddy_ok and navic_ok then
       navic_hl = navic_hl["foreground"]
-      local navic_hldim = darken(navic_hl, 50)
+      local navic_hldim = darken(navic_hl, 30)
       set_hl(0, "Navbuddy" .. navic_num(lsp_num), { fg = navic_hl })
       if #navic_hldim == 7 then
         set_hl(0, "Navbuddy" .. navic_num(lsp_num) .. "Dim", { fg = navic_hldim })
