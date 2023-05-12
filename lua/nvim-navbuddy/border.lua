@@ -1,5 +1,5 @@
 local function get_border(style, section)
-  if style ~= "single" and style ~= "rounded" and style ~= "double" and style ~= "solid" then
+  if style ~= 'single' and style ~= 'rounded' and style ~= 'double' and style ~= 'solid' then
     return style
   end
 
@@ -66,7 +66,7 @@ local function get_border(style, section)
 			solid   = "▙",
 		},
 		blank = " ",
-    none = ''
+		none = "",
 	}
 
   local border_chars_map = {
@@ -77,7 +77,7 @@ local function get_border(style, section)
         border_chars.top_right[style],
         border_chars.right[style],
         border_chars.right[style],
-        border_chars.bottom[style],
+        border_chars.none,
         border_chars.left[style],
         border_chars.left[style],
       },
@@ -96,11 +96,11 @@ local function get_border(style, section)
     },
     left = {
       style = {
-        border_chars.blank,
-        border_chars.blank,
-        border_chars.blank,
-        border_chars.blank,
-        border_chars.bottom[style],
+        border_chars.left[style], -- top_left
+        border_chars.top[style], -- top
+        border_chars.top_T[style], -- top
+        border_chars.right[style],
+        border_chars.bottom_T[style],
         border_chars.bottom[style],
         border_chars.bottom_left[style],
         border_chars.left[style],
@@ -108,21 +108,21 @@ local function get_border(style, section)
     },
     mid = {
       style = {
-        border_chars.top_T[style],
+        border_chars.none,
         border_chars.top[style],
+        border_chars.none, -- top
         border_chars.none,
-        border_chars.none,
-        border_chars.bottom[style],
-        border_chars.bottom[style],
         border_chars.bottom_T[style],
-        border_chars.left[style],
+        border_chars.bottom[style],
+        border_chars.bottom[style],
+        border_chars.none,
       },
     },
     right = {
       style = {
         border_chars.top_T[style],
         border_chars.top[style],
-        border_chars.right[style],
+        border_chars.right[style], -- top_right
         border_chars.right[style],
         border_chars.bottom_right[style],
         border_chars.bottom[style],
