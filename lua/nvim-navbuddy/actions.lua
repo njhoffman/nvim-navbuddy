@@ -290,35 +290,36 @@ function actions.append_name()
 end
 
 function actions.append_scope()
-  local callback = function(display)
-    display:close()
-    if
-      string.len(
-        vim.api.nvim_buf_get_lines(
-          display.for_buf,
-          display.focus_node.scope['end'].line - 1,
-          display.focus_node.scope['end'].line,
-          false
-        )[1]
-      ) == display.focus_node.scope['end'].character
-    then
-      vim.api.nvim_win_set_cursor(
-        display.for_win,
-        { display.focus_node.scope['end'].line, display.focus_node.scope['end'].character }
-      )
-    else
-      vim.api.nvim_win_set_cursor(
-        display.for_win,
-        { display.focus_node.scope['end'].line, display.focus_node.scope['end'].character - 1 }
-      )
-    end
-    vim.api.nvim_feedkeys('a', 'n', false)
-  end
+	local callback = function(display)
+		display:close()
+		fix_end_character_position(display.for_buf, display.focus_node.scope)
+		if
+			string.len(
+				vim.api.nvim_buf_get_lines(
+					display.for_buf,
+					display.focus_node.scope["end"].line - 1,
+					display.focus_node.scope["end"].line,
+					false
+				)[1]
+			) == display.focus_node.scope["end"].character
+		then
+			vim.api.nvim_win_set_cursor(
+				display.for_win,
+				{ display.focus_node.scope["end"].line, display.focus_node.scope["end"].character }
+			)
+		else
+			vim.api.nvim_win_set_cursor(
+				display.for_win,
+				{ display.focus_node.scope["end"].line, display.focus_node.scope["end"].character - 1 }
+			)
+		end
+		vim.api.nvim_feedkeys("a", "n", false)
+	end
 
-  return {
-    callback = callback,
-    description = 'Append node scope',
-  }
+	return {
+		callback = callback,
+		description = "Append node scope"
+	}
 end
 
 function actions.rename()
@@ -542,6 +543,36 @@ function actions.move_up()
   }
 end
 
+function actions.vsplit()
+	local callback = function(display)
+		actions.close().callback(display)
+		vim.api.nvim_command("vsplit")
+		display.for_win = vim.api.nvim_get_current_win()
+		actions.select().callback(display)
+		vim.api.nvim_command("normal! zv")
+	end
+
+	return {
+		callback = callback,
+		description = "Open selected node in a vertical split"
+	}
+end
+
+function actions.hsplit()
+	local callback = function(display)
+		actions.close().callback(display)
+		vim.api.nvim_command("split")
+		display.for_win = vim.api.nvim_get_current_win()
+		actions.select().callback(display)
+		vim.api.nvim_command("normal! zv")
+	end
+
+	return {
+		callback = callback,
+		description = "Open selected node in a horizontal split"
+	}
+end
+
 function actions.toggle_preview()
   local callback = function(display)
     if vim.api.nvim_win_get_buf(display.right.winid) == display.right.bufnr then
@@ -640,70 +671,78 @@ function actions.telescope(opts)
 end
 
 function actions.help()
-  local callback = function(display)
-    display:close()
+	local callback = function(display)
+		display:close()
 
-    local nui_popup = require('nui.popup')
+		local nui_popup = require("nui.popup")
 
-    local help_popup = nui_popup({
-      relative = 'editor',
-      position = display.config.window.position,
-      size = display.config.window.size,
-      enter = true,
-      focusable = true,
-      border = display.config.window.border,
-      win_options = {
-        winhighlight = 'Normal:NavbuddyNormalFloat,FloatBorder:NavbuddyFloatBorder',
-      },
-      buf_options = {
-        modifiable = false,
-      },
-    })
+		local help_popup = nui_popup({
+			relative = "editor",
+			position = display.config.window.position,
+			size = display.config.window.size,
+			enter = true,
+			focusable = true,
+			border = display.config.window.border,
+			win_options = {
+				winhighlight = "Normal:NavbuddyNormalFloat,FloatBorder:NavbuddyFloatBorder",
+			},
+			buf_options = {
+				modifiable = false,
+			},
+		})
 
-    local function quit_help()
-      help_popup:unmount()
-      require('nvim-navbuddy.display.menu'):new(display)
-    end
+		local function quit_help()
+			help_popup:unmount()
+			require("nvim-navbuddy.display"):new(display)
+		end
 
-    help_popup:map('n', 'q', quit_help)
-    help_popup:map('n', '<esc>', quit_help)
+		help_popup:map("n", "q", quit_help)
+		help_popup:map("n", "<esc>", quit_help)
 
-    help_popup:mount()
+		help_popup:mount()
 
-    local max_keybinding_len = 0
-    for k, _ in pairs(display.config.mappings) do
-      max_keybinding_len = math.max(#k, max_keybinding_len)
-    end
+		local max_keybinding_len = 0
+		for k, _ in pairs(display.config.mappings) do
+			max_keybinding_len = math.max(#k, max_keybinding_len)
+		end
 
-    local lines = {}
-    for k, v in pairs(display.config.mappings) do
-      local text = '  ' .. k .. string.rep(' ', max_keybinding_len - #k) .. ' | ' .. v.description
-      table.insert(lines, text)
-    end
-    table.sort(lines)
-    table.insert(
-      lines,
-      1,
-      ' Navbuddy Mappings'
-        .. string.rep(' ', math.max(1, vim.api.nvim_win_get_width(help_popup.winid) - 18 * 2))
-        .. "press 'q' to exit "
-    )
-    table.insert(lines, 2, string.rep('-', vim.api.nvim_win_get_width(help_popup.winid)))
+		local lines = {}
+		for k, v in pairs(display.config.mappings) do
+			local text = "  " .. k .. string.rep(" ", max_keybinding_len - #k) .. " | " .. v.description
+			table.insert(lines, text)
+		end
+		table.sort(lines)
+		table.insert(lines, 1, " Navbuddy Mappings" .. string.rep(" ", math.max(1, vim.api.nvim_win_get_width(help_popup.winid) - 18*2)) .. "press 'q' to exit ")
+		table.insert(lines, 2, string.rep("-", vim.api.nvim_win_get_width(help_popup.winid)))
 
-    vim.api.nvim_buf_set_option(help_popup.bufnr, 'modifiable', true)
-    vim.api.nvim_buf_set_lines(help_popup.bufnr, 0, -1, false, lines)
-    vim.api.nvim_buf_set_option(help_popup.bufnr, 'modifiable', false)
+		vim.api.nvim_buf_set_option(help_popup.bufnr, "modifiable", true)
+		vim.api.nvim_buf_set_lines(help_popup.bufnr, 0, -1, false, lines)
+		vim.api.nvim_buf_set_option(help_popup.bufnr, "modifiable", false)
 
-    vim.api.nvim_buf_add_highlight(help_popup.bufnr, -1, 'NavbuddyFunction', 0, 0, -1)
-    for i = 2, #lines do
-      vim.api.nvim_buf_add_highlight(help_popup.bufnr, -1, 'NavbuddyKey', i - 1, 0, max_keybinding_len + 3)
-    end
-  end
+		vim.api.nvim_buf_add_highlight(
+			help_popup.bufnr,
+			-1,
+			"NavbuddyFunction",
+			0,
+			0,
+			-1
+		)
+		for i = 2, #lines do
+			vim.api.nvim_buf_add_highlight(
+				help_popup.bufnr,
+				-1,
+				"NavbuddyKey",
+				i - 1,
+				0,
+				max_keybinding_len + 3
+			)
+		end
+	end
 
-  return {
-    callback = callback,
-    description = 'Show mappings',
-  }
+	return {
+		callback = callback,
+		description = "Show mappings"
+	}
 end
 
 return actions

@@ -282,6 +282,57 @@ function display:focus_range()
   end
 end
 
+-- function display:focus_range()
+--   local ranges = nil
+--
+--   if vim.deep_equal(self.focus_node.scope, self.focus_node.name_range) then
+--     ranges = { { 'NavbuddyScope', self.focus_node.scope } }
+--   else
+--     ranges = { { 'NavbuddyScope', self.focus_node.scope }, { 'NavbuddyName', self.focus_node.name_range } }
+--   end
+--
+--   if self.config.source_buffer.highlight then
+--     for _, v in ipairs(ranges) do
+--       local highlight, range = unpack(v)
+--
+--       if range['start'].line == range['end'].line then
+--         vim.api.nvim_buf_add_highlight(
+--           self.for_buf,
+--           state.ns,
+--           highlight,
+--           range['start'].line - 1,
+--           range['start'].character,
+--           range['end'].character
+--         )
+--       else
+--         vim.api.nvim_buf_add_highlight(
+--           self.for_buf,
+--           state.ns,
+--           highlight,
+--           range['start'].line - 1,
+--           range['start'].character,
+--           -1
+--         )
+--         vim.api.nvim_buf_add_highlight(
+--           self.for_buf,
+--           state.ns,
+--           highlight,
+--           range['end'].line - 1,
+--           0,
+--           range['end'].character
+--         )
+--         for i = range['start'].line, range['end'].line - 2, 1 do
+--           vim.api.nvim_buf_add_highlight(self.for_buf, state.ns, highlight, i, 0, -1)
+--         end
+--       end
+--     end
+--   end
+--
+--   if self.config.source_buffer.follow_node then
+--     self:reorient(self.for_win, self.config.source_buffer.reorient)
+--   end
+-- end
+
 function display:reorient(ro_win, reorient_method)
   vim.api.nvim_win_set_cursor(
     ro_win,
@@ -382,7 +433,7 @@ function display:redraw()
     w = vim.api.nvim_win_get_width(self.title.winid),
     h = vim.api.nvim_win_get_height(self.title.winid),
   }
-  local opts = { winsize = winsize, align = 'center' }
+  local opts = { winsize = winsize, align = 'center', separator = '  ' }
   buffer.fill_title(self.title, node, self.config, opts)
 end
 
