@@ -100,6 +100,8 @@ Defaults >
     							-- starting with the top-left corner. eg: { "╔", "═" ,"╗", "║", "╝", "═", "╚", "║" }.
 			size = "60%",
 			position = "50%",
+			scrolloff = nil,    -- scrolloff value within navbuddy window
+			winblend = nil,		-- winblend value [0-100 or nil] (transparency)
 			sections = {
 				left = {
 					size = "20%",

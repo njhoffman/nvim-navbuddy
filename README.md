@@ -36,6 +36,9 @@ Plug "neovim/nvim-lspconfig"
 Plug "SmiteshP/nvim-navic"
 Plug "MunifTanjim/nui.nvim"
 Plug "SmiteshP/nvim-navbuddy"
+Plug "numToStr/Comment.nvim",        " Optional
+Plug "echasnovski/mini.comment",     " Optional
+Plug "nvim-telescope/telescope.nvim" " Optional
 ```
 
 ## ⚙️ Setup
