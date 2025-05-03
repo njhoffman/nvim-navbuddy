@@ -75,16 +75,46 @@ local function fill_buffer(buf, node, config)
   vim.api.nvim_win_set_cursor(buf.winid, cursor_pos)
 end
 
-local display = {}
+---@class Navbuddy.display.opts
+---@field config Navbuddy.config
+---@field for_buf number
+---@field for_win number
+---@field start_cursor integer[] # (row, col) tuple
+---@field focus_node Navbuddy.symbolNode
+---@field lsp_name string
 
-function display:new(obj)
-  ui.highlight_setup(obj.config)
+---@class Navbuddy.display.state
+---@field leaving_window_for_action boolean
+---@field leaving_window_for_reorientation boolean
+---@field closed boolean
+---@field source_buffer_scrolloff? number
+---@field user_gui_cursor? string
 
-  -- Object
-  setmetatable(obj, self)
-  self.__index = self
+---@class Navbuddy.display
+---@field config Navbuddy.config
+---@field lsp_name string
+---@field for_buf number
+---@field for_win number
+---@field start_cursor integer[] # (row, col) tuple
+---@field focus_node Navbuddy.symbolNode
+---@field layout NuiLayout
+---@field left NuiPopup
+---@field mid NuiPopup
+---@field right NuiPopup
+---@field state Navbuddy.display.state
+---@overload fun(opts:Navbuddy.display.opts): Navbuddy.display
+local display = setmetatable({}, {
+  __call = function(t, ...)
+    return t.new(...)
+  end,
+})
+display.__index = display
 
-  local config = obj.config
+---@param opts Navbuddy.display.opts
+---@return any
+function display.new(opts)
+  local self = setmetatable({}, display)
+  local config = opts.config
 
   -- NUI elements
   local left_popup = nui_popup(merge({
@@ -117,7 +147,7 @@ function display:new(obj)
   }))
 
   local lsp_name = {
-    bottom = nui_text("[" .. obj.lsp_name .. "]", "NavbuddyFloatBorder"),
+    bottom = nui_text("[" .. opts.lsp_name .. "]", "NavbuddyFloatBorder"),
     bottom_align = "right",
   }
 
@@ -132,10 +162,11 @@ function display:new(obj)
     lsp_name = nil
   end
 
+  local right_border = config.window.sections.right.border
   local right_popup = nui_popup(merge({
     focusable = true,
     border = {
-      style = config.window.sections.right.border or ui.get_border_chars(config.window.border, "right"),
+      style = right_border and right_border.style or right_border or ui.get_border_chars(config.window.border, "right"),
       text = lsp_name,
     },
     win_options = {
@@ -163,98 +194,111 @@ function display:new(obj)
     }, { dir = "row" })
   )
 
-  obj.layout = layout
-  obj.left = left_popup
-  obj.mid = mid_popup
-  obj.right = right_popup
-  obj.state = {
+  self.config = opts.config
+  self.lsp_name = opts.lsp_name
+  self.for_buf = opts.for_buf
+  self.for_win = opts.for_win
+  self.start_cursor = opts.start_cursor
+  self.focus_node = opts.focus_node
+  -- self.lsp_name = lsp_name
+  self.layout = layout
+  self.left = left_popup
+  self.mid = mid_popup
+  self.right = right_popup
+  self.state = {
     leaving_window_for_action = false,
     leaving_window_for_reorientation = false,
     closed = false,
+    -- source_buffer_scrolloff = nil,
     -- user_gui_cursor = nil,
-    source_buffer_scrolloff = nil,
   }
 
+  display.init(self)
+  return self
+end
+
+function display:init()
+  ui.highlight_setup(self.config)
+
   -- Set filetype
-  vim.api.nvim_buf_set_option(obj.mid.bufnr, "filetype", "Navbuddy")
+  vim.api.nvim_buf_set_option(self.mid.bufnr, "filetype", "Navbuddy")
 
   -- Hidden cursor
-  if obj.state.user_gui_cursor == nil then
-    obj.state.user_gui_cursor = vim.api.nvim_get_option("guicursor")
+  if self.state.user_gui_cursor == nil then
+    self.state.user_gui_cursor = vim.api.nvim_get_option("guicursor")
   end
-  obj.state.user_gui_cursor = vim.api.nvim_get_option("guicursor")
-  if obj.state.user_gui_cursor ~= "" then
+  self.state.user_gui_cursor = vim.api.nvim_get_option("guicursor")
+  if self.state.user_gui_cursor ~= "" then
     vim.api.nvim_set_option("guicursor", "a:NavbuddyCursor")
   end
 
   -- User Scrolloff
-  if config.source_buffer.scrolloff then
-    obj.state.source_buffer_scrolloff = vim.api.nvim_get_option("scrolloff")
-    vim.api.nvim_set_option("scrolloff", config.source_buffer.scrolloff)
+  if self.config.source_buffer.scrolloff then
+    self.state.source_buffer_scrolloff = vim.api.nvim_get_option("scrolloff")
+    vim.api.nvim_set_option("scrolloff", self.config.source_buffer.scrolloff)
   end
 
   -- Autocmds
   local augroup = vim.api.nvim_create_augroup("Navbuddy", { clear = false })
-  vim.api.nvim_clear_autocmds({ buffer = obj.mid.bufnr })
+  vim.api.nvim_clear_autocmds({ buffer = self.mid.bufnr })
   vim.api.nvim_create_autocmd("CursorMoved", {
     group = augroup,
-    buffer = obj.mid.bufnr,
+    buffer = self.mid.bufnr,
     callback = function()
-      local cursor_pos = vim.api.nvim_win_get_cursor(obj.mid.winid)
-      if obj.focus_node ~= obj.focus_node.parent.children[cursor_pos[1]] then
-        obj.focus_node = obj.focus_node.parent.children[cursor_pos[1]]
-        obj:redraw()
+      local cursor_pos = vim.api.nvim_win_get_cursor(self.mid.winid)
+      if self.focus_node ~= self.focus_node.parent.children[cursor_pos[1]] then
+        self.focus_node = self.focus_node.parent.children[cursor_pos[1]]
+        self:redraw()
       end
 
-      obj.focus_node.parent.memory = obj.focus_node.index
+      self.focus_node.parent.memory = self.focus_node.index
 
-      obj:clear_highlights()
-      obj:focus_range()
+      self:clear_highlights()
+      self:focus_range()
     end,
   })
   vim.api.nvim_create_autocmd("BufLeave", {
     group = augroup,
-    buffer = obj.mid.bufnr,
+    buffer = self.mid.bufnr,
     callback = function()
       if
-        obj.state.leaving_window_for_action == false
-        and obj.state.leaving_window_for_reorientation == false
-        and obj.state.closed == false
+        self.state.leaving_window_for_action == false
+        and self.state.leaving_window_for_reorientation == false
+        and self.state.closed == false
       then
-        obj:close()
+        self:close()
       end
     end,
   })
   vim.api.nvim_create_autocmd("CmdlineEnter", {
     group = augroup,
-    buffer = obj.mid.bufnr,
+    buffer = self.mid.bufnr,
     callback = function()
-      vim.api.nvim_set_option("guicursor", obj.state.user_gui_cursor)
+      vim.api.nvim_set_option("guicursor", self.state.user_gui_cursor)
     end,
   })
   vim.api.nvim_create_autocmd("CmdlineLeave", {
     group = augroup,
-    buffer = obj.mid.bufnr,
+    buffer = self.mid.bufnr,
     callback = function()
-      if obj.state.user_gui_cursor ~= "" then
+      if self.state.user_gui_cursor ~= "" then
         vim.api.nvim_set_option("guicursor", "a:NavbuddyCursor")
       end
     end,
   })
 
   -- Mappings
-  for i, v in pairs(config.mappings) do
-    obj.mid:map("n", i, function()
-      v.callback(obj)
+  for i, v in pairs(self.config.mappings) do
+    self.mid:map("n", i, function()
+      v.callback(self)
     end, { nowait = true })
   end
 
   -- Display
-  layout:mount()
-  obj:redraw()
-  obj:focus_range()
-
-  return obj
+  self.layout:mount()
+  self:redraw()
+  self:focus_range()
+  return self
 end
 
 function display:focus_range()
