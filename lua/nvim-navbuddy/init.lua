@@ -364,10 +364,22 @@ function M.attach(client, bufnr)
     group = navbuddy_augroup,
     buffer = bufnr,
   })
+end
 
-  vim.api.nvim_buf_create_user_command(bufnr, "Navbuddy", function()
-    M.open(bufnr)
-  end, {})
+local function setup_commands()
+  local get_complete = function()
+    return { "root" }
+  end
+
+  vim.api.nvim_create_user_command("Navbuddy", function(cmd)
+    ---@type Navbuddy.openOpts
+    local opts = {}
+    if cmd.fargs[1] == "root" then
+      opts.root = true
+    end
+
+    M.open(opts)
+  end, { nargs = "?", complete = get_complete, desc = "Navbuddy" })
 end
 
 ---@param user_config Navbuddy.config
@@ -457,6 +469,8 @@ function M.setup(user_config)
       end
     end
   end
+
+  setup_commands()
 end
 
 return M
