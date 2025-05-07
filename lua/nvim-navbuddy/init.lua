@@ -195,7 +195,7 @@ local function choose_lsp_menu(for_buf, make_request)
   menu:mount()
 end
 
-local function request(for_buf, handler)
+local function request(for_buf, handler, opts)
   local function make_request(client)
     navic.request_symbol(for_buf, function(bufnr, symbols)
       navic.update_data(bufnr, symbols)
@@ -204,7 +204,7 @@ local function request(for_buf, handler)
 
       local curr_node = context_data[#context_data]
 
-      handler(for_buf, curr_node, client.name)
+      handler(for_buf, curr_node, client.name, opts)
     end, client)
   end
 
@@ -241,7 +241,8 @@ end
 ---@param bufnr number
 ---@param curr_node Navbuddy.symbolNode
 ---@param lsp_name string
-local function handler(bufnr, curr_node, lsp_name)
+---@param opts Navbuddy.openOpts
+local function handler(bufnr, curr_node, lsp_name, opts)
   if curr_node.is_root then
     if curr_node.children then
       local curr_line = vim.api.nvim_win_get_cursor(0)[1]
@@ -261,6 +262,14 @@ local function handler(bufnr, curr_node, lsp_name)
     end
   end
 
+  while opts.root and curr_node and not curr_node.parent.is_root do
+    curr_node = curr_node.parent
+  end
+
+  if not curr_node then
+    return
+  end
+
   display.new({
     for_buf = bufnr,
     for_win = vim.api.nvim_get_current_win(),
@@ -275,11 +284,21 @@ end
 
 local M = {}
 
----Open navbuddy
----@param bufnr number
-function M.open(bufnr)
-  bufnr = bufnr or vim.api.nvim_get_current_buf()
-  request(bufnr, handler)
+---Opens Navbuddy for the given buffer or options.
+---@param opts? number|Navbuddy.openOpts Optional buffer number or options table.
+---        If a number, it's treated as a buffer number.
+---        If a table, it may include a `bufnr` field.
+---        If omitted, the current buffer is used.
+function M.open(opts)
+  -- Get bufnr and validate
+  local bufnr = type(opts) == "number" and opts
+    or type(opts) == "table" and opts.bufnr
+    or vim.api.nvim_get_current_buf()
+  assert(vim.api.nvim_buf_is_valid(bufnr), "Invalid buffer number")
+
+  opts = type(opts) == "table" and opts or {}
+
+  request(bufnr, handler, opts)
 end
 
 ---@param client vim.lsp.Client

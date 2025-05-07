@@ -48,6 +48,10 @@
 ---@field source_buffer? SourceBufferConfig
 ---@field custom_hl_group? string
 
+---@class Navbuddy.openOpts
+---@field root? boolean
+---@field bufnr? number
+
 ---@class RangePosition
 ---@field character integer
 ---@field line integer
