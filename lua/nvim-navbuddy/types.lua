@@ -47,6 +47,7 @@
 ---@field lsp? LspConfig
 ---@field source_buffer? SourceBufferConfig
 ---@field custom_hl_group? string
+---@field integrations? { telescope: boolean, snacks: boolean } Which integrations to enable
 
 ---@class Navbuddy.openOpts
 ---@field root? boolean

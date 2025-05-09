@@ -62,6 +62,7 @@ local config = {
     [255] = "󰉨 ", -- Macro
   },
   use_default_mappings = true,
+  integrations = {},
   mappings = {
     ["<esc>"] = actions.close(),
     ["q"] = actions.close(),
@@ -105,15 +106,7 @@ local config = {
     ["<C-v>"] = actions.vsplit(),
     ["<C-s>"] = actions.hsplit(),
 
-    ["t"] = actions.telescope({
-      layout_strategy = "horizontal",
-      layout_config = {
-        height = 0.60,
-        width = 0.60,
-        prompt_position = "top",
-        preview_width = 0.50,
-      },
-    }),
+    ["t"] = actions.fuzzy_find(),
 
     ["g?"] = actions.help(),
   },

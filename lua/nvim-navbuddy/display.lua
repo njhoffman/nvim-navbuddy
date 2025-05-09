@@ -110,7 +110,7 @@ local display = setmetatable({}, {
 })
 display.__index = display
 
----@param opts Navbuddy.display.opts
+---@param opts Navbuddy.display.opts|Navbuddy.display
 ---@return any
 function display.new(opts)
   local self = setmetatable({}, display)
@@ -193,6 +193,11 @@ function display.new(opts)
       nui_layout.Box(right_popup, { grow = 1 }),
     }, { dir = "row" })
   )
+
+  -- Prevent black splash on transparent terminals
+  if vim.g.navbuddy_taransparent then
+    layout._.float.win_options = { winblend = 0 }
+  end
 
   self.config = opts.config
   self.lsp_name = opts.lsp_name
