@@ -1,5 +1,6 @@
 local M = {}
 
+---@private
 ---@param opts any
 ---@param display Navbuddy.display
 function M.find(opts, display)

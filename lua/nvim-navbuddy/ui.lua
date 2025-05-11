@@ -1,7 +1,52 @@
+---@text HIGHLIGHT
+---
+--- |nvim-navbuddy| provides the following highlights which get used when
+--- available.
+---
+--- `NavbuddyName`  - highlight for name in source buffer
+--- `NavbuddyScope` - highlight for scope of context in source buffer
+--- `NavbuddyFloatBorder` - Floatborder highlight
+--- `NavbuddyNormalFloat` - Float normal highlight
+---
+--- The following highlights are are used to highlight elements in the navbuddy
+--- window according to their type. If you have "NavicIcons<type>" highlights
+--- already defined, these will automatically get linked to them unless defined
+--- explicitly.
+---
+--- `NavbuddyFile`
+--- `NavbuddyModule`
+--- `NavbuddyNamespace`
+--- `NavbuddyPackage`
+--- `NavbuddyClass`
+--- `NavbuddyMethod`
+--- `NavbuddyProperty`
+--- `NavbuddyField`
+--- `NavbuddyConstructor`
+--- `NavbuddyEnum`
+--- `NavbuddyInterface`
+--- `NavbuddyFunction`
+--- `NavbuddyVariable`
+--- `NavbuddyConstant`
+--- `NavbuddyString`
+--- `NavbuddyNumber`
+--- `NavbuddyBoolean`
+--- `NavbuddyArray`
+--- `NavbuddyObject`
+--- `NavbuddyKey`
+--- `NavbuddyNull`
+--- `NavbuddyEnumMember`
+--- `NavbuddyStruct`
+--- `NavbuddyEvent`
+--- `NavbuddyOperator`
+--- `NavbuddyTypeParameter`
+---@tag navbuddy-highlights
+---@toc_entry Highlights
+
 local navic = require("nvim-navic.lib")
 
 local ui = {}
 
+---@private
 ---@param style BorderConfig
 ---@param section SectionName
 ---@return any
@@ -117,6 +162,7 @@ function ui.get_border_chars(style, section)
   return border_chars_map[section]
 end
 
+---@private
 ---@param config Navbuddy.config
 function ui.highlight_setup(config)
   for lsp_num = 1, 26 do

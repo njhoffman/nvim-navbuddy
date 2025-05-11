@@ -1,10 +1,14 @@
 ---@alias BorderConfig 'double'|'none'|'rounded'|'shadow'|'single'|'solid'|'default'|nui_popup_border_options
 ---@alias SectionName "left"|"mid"|"right"
 
+---@class Integrations
+---@field snacks? boolean
+---@field telescope? boolean
+
 ---@class WindowSectionConfig
 ---@field border? BorderConfig
 ---@field size? string
----@field preview? string
+---@field preview? "always"|"leaf"|"never"
 ---@field buf_options? table<string, any>
 ---@field win_options? table<string, any>
 
@@ -47,7 +51,7 @@
 ---@field lsp? LspConfig
 ---@field source_buffer? SourceBufferConfig
 ---@field custom_hl_group? string
----@field integrations? { telescope: boolean, snacks: boolean } Which integrations to enable
+---@field integrations? Integrations Which integrations to enable
 
 ---@class Navbuddy.openOpts
 ---@field root? boolean

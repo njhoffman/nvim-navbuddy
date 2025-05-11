@@ -9,6 +9,7 @@ local defaultOpts = {
   },
 }
 
+---@private
 ---@param opts any
 ---@param display Navbuddy.display
 M.find = function(opts, display)

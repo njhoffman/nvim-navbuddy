@@ -75,6 +75,7 @@ local function fill_buffer(buf, node, config)
   vim.api.nvim_win_set_cursor(buf.winid, cursor_pos)
 end
 
+---@private
 ---@class Navbuddy.display.opts
 ---@field config Navbuddy.config
 ---@field for_buf number
@@ -83,6 +84,7 @@ end
 ---@field focus_node Navbuddy.symbolNode
 ---@field lsp_name string
 
+---@private
 ---@class Navbuddy.display.state
 ---@field leaving_window_for_action boolean
 ---@field leaving_window_for_reorientation boolean
@@ -90,6 +92,7 @@ end
 ---@field source_buffer_scrolloff? number
 ---@field user_gui_cursor? string
 
+---@private
 ---@class Navbuddy.display
 ---@field config Navbuddy.config
 ---@field lsp_name string

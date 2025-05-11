@@ -1,3 +1,9 @@
+---@text ACTIONS
+---
+--- |nvim-navbuddy| provides the following actions for the user.
+---@tag navbuddy-actions
+---@toc_entry Actions
+
 local utils = require("nvim-navbuddy.utils")
 local actions = {}
 
@@ -13,6 +19,7 @@ local function fix_end_character_position(bufnr, name_range_or_scope)
   end
 end
 
+--- Close the Navbuddy window and return cursor to original location.
 function actions.close()
   local callback = function(display)
     display:close()
@@ -25,6 +32,7 @@ function actions.close()
   }
 end
 
+--- Move to next_sibling, below current node, in Navbuddy window.
 function actions.next_sibling()
   local callback = function(display)
     if display.focus_node.next == nil then
@@ -48,6 +56,7 @@ function actions.next_sibling()
   }
 end
 
+--- Move to previous_sibling, above current node, in Navbuddy window.
 function actions.previous_sibling()
   local callback = function(display)
     if display.focus_node.prev == nil then
@@ -71,6 +80,7 @@ function actions.previous_sibling()
   }
 end
 
+--- Move to parent of current, left of current node, in Navbuddy window.
 function actions.parent()
   local callback = function(display)
     if display.focus_node.parent.is_root then
@@ -89,6 +99,7 @@ function actions.parent()
   }
 end
 
+--- Move to children of current, right of current node, in Navbuddy window.
 function actions.children()
   local callback = function(display)
     if display.focus_node.children == nil then
@@ -113,6 +124,7 @@ function actions.children()
   }
 end
 
+--- Move to root node, the first node left of current node, in Navbuddy window.
 function actions.root()
   local callback = function(display)
     if display.focus_node.parent.is_root then
@@ -133,6 +145,7 @@ function actions.root()
   }
 end
 
+--- Goto currently focus node.
 function actions.select()
   local callback = function(display)
     display:close()
@@ -174,6 +187,7 @@ function actions.select()
   }
 end
 
+--- Yank the name of current node.
 function actions.yank_name()
   local callback = function(display)
     display:close()
@@ -196,6 +210,7 @@ function actions.yank_name()
   }
 end
 
+--- Yank the scope of current node.
 function actions.yank_scope()
   local callback = function(display)
     display:close()
@@ -218,6 +233,7 @@ function actions.yank_scope()
   }
 end
 
+--- Visual select the name of current node.
 function actions.visual_name()
   local callback = function(display)
     display:close()
@@ -239,6 +255,7 @@ function actions.visual_name()
   }
 end
 
+--- Visual select the scope of current node.
 function actions.visual_scope()
   local callback = function(display)
     display:close()
@@ -260,6 +277,7 @@ function actions.visual_scope()
   }
 end
 
+--- Start insert at begin of name.
 function actions.insert_name()
   local callback = function(display)
     display:close()
@@ -277,6 +295,7 @@ function actions.insert_name()
   }
 end
 
+--- Start insert at begin of scope.
 function actions.insert_scope()
   local callback = function(display)
     display:close()
@@ -294,6 +313,7 @@ function actions.insert_scope()
   }
 end
 
+--- Start insert at end of name.
 function actions.append_name()
   local callback = function(display)
     display:close()
@@ -311,6 +331,7 @@ function actions.append_name()
   }
 end
 
+--- Start insert at end of scope.
 function actions.append_scope()
   local callback = function(display)
     display:close()
@@ -344,6 +365,7 @@ function actions.append_scope()
   }
 end
 
+--- Trigger lsp rename for current node.
 function actions.rename()
   local callback = function(display)
     display:close()
@@ -356,6 +378,7 @@ function actions.rename()
   }
 end
 
+--- Delete currently focused scope.
 function actions.delete()
   local callback = function(display)
     actions.visual_scope().callback(display)
@@ -368,6 +391,7 @@ function actions.delete()
   }
 end
 
+--- Create fold for current scope. Requires fold methos to be "manual".
 function actions.fold_create()
   local callback = function(display)
     if vim.o.foldmethod ~= "manual" then
@@ -398,6 +422,7 @@ function actions.fold_create()
   }
 end
 
+--- Delete fold for current scope. Requires fold methos to be "manual".
 function actions.fold_delete()
   local callback = function(display)
     if vim.o.foldmethod ~= "manual" then
@@ -428,6 +453,7 @@ function actions.fold_delete()
   }
 end
 
+--- Comment selected scope. Require Comment.nvim plugin to be installed.
 function actions.comment()
   local callback = function(display)
     local status_ok, comment = pcall(require, "Comment.api")
@@ -537,6 +563,8 @@ local function swap_nodes(for_buf, nodeA, nodeB)
   )
 end
 
+--- Move currently focued node down. Copies entire lines and works only in case
+--- there are no overlapping lines between current node and next node.
 function actions.move_down()
   local callback = function(display)
     if display.focus_node.next == nil then
@@ -554,6 +582,8 @@ function actions.move_down()
   }
 end
 
+--- Move currently focued node up. Copies entire lines and works only in case
+--- there are no overlapping lines between current node and previous node.
 function actions.move_up()
   local callback = function(display)
     if display.focus_node.prev == nil then
@@ -586,6 +616,9 @@ function actions.toggle_preview()
   }
 end
 
+--- Opens vertical split with currently selected node.
+--- Will not remember top line like |winsaveview()| does.
+--- NOTE: Direction of split is controlled by 'splitright'
 function actions.vsplit()
   local callback = function(display)
     actions.close().callback(display)
@@ -601,6 +634,8 @@ function actions.vsplit()
   }
 end
 
+--- Acts akin to vsplit, but splits horizontally.
+--- NOTE: Direction of split is controlled by 'splitbelow'
 function actions.hsplit()
   local callback = function(display)
     actions.close().callback(display)
@@ -616,9 +651,13 @@ function actions.hsplit()
   }
 end
 
+--- Open Fuzzy finder with telescope to search sibling nodes on current level.
+--- Can be customized during setup by passing opts table, all configuration
+--- passed to telescope.nvim's default option can be passed here.
+---@param opts any -- telescope config
 function actions.telescope(opts)
   local callback = function(display)
-    require("lua.nvim-navbuddy.picker.telescope").find(opts, display)
+    require("nvim-navbuddy.picker.telescope").find(opts, display)
   end
 
   return {
@@ -627,6 +666,10 @@ function actions.telescope(opts)
   }
 end
 
+--- Open Fuzzy finder with your prefered to search sibling nodes on current level.
+--- Can be customized during setup by passing opts table, all configuration
+--- passed to your picker's default option can be passed here.
+---@param opts any -- telescope or snacks config
 function actions.fuzzy_find(opts)
   ---@param display Navbuddy.display
   local callback = function(display)
@@ -639,10 +682,11 @@ function actions.fuzzy_find(opts)
 
   return {
     callback = callback,
-    description = "Fuzzy search current level",
+    description = "Fuzzy search current level with fuzzy picker",
   }
 end
 
+--- Open mappings help window
 function actions.help()
   local callback = function(display)
     display:close()
