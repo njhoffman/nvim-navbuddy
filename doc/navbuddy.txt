@@ -3,307 +3,505 @@
 A simple popup display that provides breadcrumbs like navigation feature but
 in keyboard centric manner inspired by ranger file manager.
 
-Requires :
-*nvim-lspconfig* `https://github.com/neovim/nvim-lspconfig`
-*nvim-navic* `https://github.com/SmiteshP/nvim-navic`
-*nui.nvim* `https://github.com/MunifTanjim/nui.nvim`
-*Neovim* 0.8 or above
+------------------------------------------------------------------------------
+                                                    *navbuddy-table-of-contents*
+TABLE OF CONTENTS
 
-=============================================================================
-CONTENTS                                                     *navbuddy-components*
+  Requirements ....................................... |navbuddy-requirements|
+  Installation ....................................... |navbuddy-installation|
+  Usage ..................................................... |navbuddy-usage|
+  Commands ..................................... |:Navbuddy| |navbuddy-commands|
+  Config ................................................... |navbuddy-config|
+  API ......................................................... |navbuddy-api|
+  Actions ................................................. |navbuddy-actions|
+  Highlights ........................................... |navbuddy-highlights|
 
-API                                                                 |navbuddy-api|
-Usage                                                             |navbuddy-usage|
-Customisation                                                 |navbuddy-customise|
-Actions                                                         |navbuddy-actions|
-Highlights                                                   |navbuddy-highlights|
+------------------------------------------------------------------------------
+                                                         *navbuddy-requirements*
+REQUIREMENTS
 
-=============================================================================
-API                                                                 *navbuddy-api*
+- nvim-lspconfig: `https://github.com/neovim/nvim-lspconfig`
+- nvim-navic: `https://github.com/SmiteshP/nvim-navic`
+- nui.nvim: `https://github.com/MunifTanjim/nui.nvim`
+- Neovim: 0.8 or above
 
-|nvim-navbuddy| provides the following functions for the user.
+OPTIONAL REQUIREMENTS
 
-*navbuddy.setup* (opts)
-	Configure |nvim-navbuddy|'s options. See more *navbuddy-customise*.
+- Comment.nvim: `https://github.com/numToStr/Comment.nvim`
+- Fuzzy find: Only one of these is needed.
+    - telescope.nvim: `https://github.com/nvim-telescope/telescope.nvim`
+    - snacks.nvim: `https://github.com/folke/snacks.nvim`
 
-*navbuddy.attach* (client, bufnr)
-	Used to attach |nvim-navbuddy| to lsp server. Pass this function as
-	on_attach while setting up your desired lsp server. Manual attachment can
-	be skiped if you have enabled auto_attach option.
+------------------------------------------------------------------------------
+                                                         *navbuddy-installation*
+INSTALLATION
+>lua
+  -- lazy.nvim
+  {
+    "neovim/nvim-lspconfig",
+    dependencies = {
+      "hasansujon786/nvim-navbuddy",
+      opts = { lsp = { auto_attach = true } }
+      dependencies = {
+        "SmiteshP/nvim-navic",
+        "MunifTanjim/nui.nvim"
+      }
+    }
+  }
+<
 
-*navbuddy.open* (bufnr)
-	Opens the Navbuddy window.
+------------------------------------------------------------------------------
+                                                                *navbuddy-usage*
+USAGE
 
-=============================================================================
-Usage                                                             *navbuddy-usage*
-
-|nvim-navbuddy| needs to be attached to lsp servers of the buffer to work. Use the
-|navbuddy.attach| function while setting up lsp servers. You can skip this
+nvim-navbuddy needs to be attached to lsp servers of the buffer to work. Use the
+navbuddy.attach function while setting up lsp servers. You can skip this
 step if you have enabled auto_attach option during setup.
 
-Example: >
-	require("lspconfig").clangd.setup {
-		on_attach = function(client, bufnr)
-			navbuddy.attach(client, bufnr)
-		end
-	}
+Example: >lua
+  require("lspconfig").clangd.setup {
+    on_attach = function(client, bufnr)
+      navbuddy.attach(client, bufnr)
+    end
+  }
 <
-Then simply use command "Navbuddy" to open the window.
+Then simply use command `Navbuddy` to open the window.
 
-=============================================================================
-Customisation                                                 *navbuddy-customise*
+------------------------------------------------------------------------------
+                                                   *:Navbuddy* *navbuddy-commands*
+COMMANDS
+
+Navbuddy does not define any default keybindings for nvim. The example
+keybindings are:
+>vim
+  nnoremap zo :Navbuddy<cr>
+  nnoremap zi :Navbuddy root<cr>
+<
+root~
+Open navbuddy with root node, the first node left of current node.
+
+------------------------------------------------------------------------------
+                                                               *navbuddy-config*
+DEFAULT CONFIG
 
 Use |navbuddy.setup| to override any of the default options
 
-	icons: table
-		Icons to show for captured symbols. Default icons assume that you
-		have nerd-font.
+window: table
+  Set options related to window's "border", "size", "position".
 
-	window: table
-		Set options related to window's "border", "size", "position".
+icons: table
+  Icons to show for captured symbols. Default icons assume that you
+  have nerd-fonts.
 
-	mappings: table
-		Actions to be triggered for specified keybindings. If you wish to set
-		custom keybindings, you will have to set all the keybindings
+use_default_mappings: boolean
+  If set to false, only mappings set by user are set. Else default mappings
+  are used for keys that are not set by user.
 
-	lsp: table
-		auto_attach: boolean
-			Enable to have Navbuddy automatically attach to every LSP for
-			current buffer. Its disabled by default.
-		preference: table
-			Table ranking lsp_servers. Lower the index, higher the priority of
-			the server. If there are more than one server attached to a
-			buffer, navbuddy will refer to this list to make a decision on
-			which one to use.
-			example: Incase a buffer is attached to clangd and ccls both and
-			the preference list is { "clangd", "pyright" }. Then clangd will
-			be prefered.
+mappings: table
+  Actions to be triggered for specified keybindings. For each keybinding
+  it takes a table of format
+  { callback = <function_to_be_called>, description = "string"}.
+  The callback function takes the "display" object as an argument.
 
-	source_buffer:
-		follow_node: boolean
-			Move the source buffer such that focused node is visible.
-		highlight: boolean
-			Highlight focused node on source buffer
-		reorient: string
-			Reorient buffer after changing nodes. options are "smart", "top",
-			"mid" or "none"
+lsp: table
+  auto_attach: boolean
+    Enable to have Navbuddy automatically attach to every LSP for
+    current buffer. Its disabled by default.
+  preference: table
+    Table ranking lsp_servers. Lower the index, higher the priority of
+    the server. If there are more than one server attached to a
+    buffer, navbuddy will refer to this list to make a decision on
+    which one to use.
+    example: Incase a buffer is attached to clangd and ccls both and
+    the preference list is { "clangd", "pyright" }. Then clangd will
+    be prefered.
 
-Defaults >
+source_buffer:
+  follow_node: boolean
+    Move the source buffer such that focused node is visible.
+  highlight: boolean
+    Highlight focused node on source buffer
+  reorient: string
+    Reorient buffer after changing nodes. options are "smart", "top",
+    "mid" or "none"
 
-	local navbuddy = require("nvim-navbuddy")
-	local actions = require("nvim-navbuddy.actions")
+node_markers: table
+  Indicate whether a node is a leaf or branch node. Default icons assume
+  you have nerd-fonts.
 
-	navbuddy.setup {
-		window = {
-			border = "single",  -- "rounded", "double", "solid", "none"
-								-- or an array with eight chars building up the border in a clockwise fashion
-    							-- starting with the top-left corner. eg: { "╔", "═" ,"╗", "║", "╝", "═", "╚", "║" }.
-			size = "60%",
-			position = "50%",
-			scrolloff = nil,    -- scrolloff value within navbuddy window
-			winblend = nil,		-- winblend value [0-100 or nil] (transparency)
-			sections = {
-				left = {
-					size = "20%",
-					border = nil, -- You can set border style for each section individually as well.
-				},
-				mid = {
-					size = "40%",
-					border = nil,
-				},
-				right = {
-					-- No size option for right most section. It fills to
-					-- remaining area.
-					border = nil,
-				}
-			}
-		},
-		icons = {
-			[1] = " ", -- File
-			[2] = " ", -- Module
-			[3] = " ", -- Namespace
-			[4] = " ", -- Package
-			[5] = " ", -- Class
-			[6] = " ", -- Method
-			[7] = " ", -- Property
-			[8] = " ", -- Field
-			[9] = " ", -- Constructor
-			[10] = "練", -- Enum
-			[11] = "練", -- Interface
-			[12] = " ", -- Function
-			[13] = " ", -- Variable
-			[14] = " ", -- Constant
-			[15] = " ", -- String
-			[16] = " ", -- Number
-			[17] = "◩ ", -- Boolean
-			[18] = " ", -- Array
-			[19] = " ", -- Object
-			[20] = " ", -- Key
-			[21] = "ﳠ ", -- Null
-			[22] = " ", -- EnumMember
-			[23] = " ", -- Struct
-			[24] = " ", -- Event
-			[25] = " ", -- Operator
-			[26] = " ", -- TypeParameter
-			[255] = " ", -- Macro
-		},
-		mappings = {
-			["<esc>"] = actions.close,        -- Close and cursor to original location
-			["q"] = actions.close,
+>lua
+  ---@class Navbuddy.config
+  {
+    window = {
+      -- border can be string or an array with eight chars building up the border in a clockwise fashion
+      -- starting with the top-left corner. eg: { "╔", "═" ,"╗", "║", "╝", "═", "╚", "║" }.
+      border = "single",     -- Options: "double"|"none"|"rounded"|"shadow"|"single"|"solid"|"default"
+      size = "60%",          -- Or table format example: { height = "40%", width = "100%"}
+      position = "50%",      -- Or table format example: { row = "100%", col = "0%"}
+      scrolloff = nil,       -- scrolloff value within navbuddy window
+      sections = {
+        left = {
+          border = nil,      -- You can set border style for each section individually as well.
+          size = "20%",
+          win_options = nil, -- list of window options for each section individually.
+        },
+        mid = {
+          border = nil,
+          size = "40%",
+          win_options = {
+            -- number = true,-- Uncomment this line if you want see the number
+            -- relativenumber = true,
+          },
+        },
+        right = {
+          -- No size option for right most section. It fills to remaining area.
+          border = nil,
+          preview = "leaf",  -- Options: "leaf"|"always"|"never"
+                             -- "leaf": Right section can show previews too.
+          win_options = nil,
+        },
+      },
+    },
+    icons = {
+      [1] = "󰈙 ",  -- File
+      [2] = " ",  -- Module
+      [3] = "󰌗 ",  -- Namespace
+      [4] = " ",  -- Package
+      [5] = "󰌗 ",  -- Class
+      [6] = "󰆧 ",  -- Method
+      [7] = " ",  -- Property
+      [8] = " ",  -- Field
+      [9] = " ",  -- Constructor
+      [10] = "󰕘",  -- Enum
+      [11] = "󰕘",  -- Interface
+      [12] = "󰊕 ", -- Function
+      [13] = "󰆧 ", -- Variable
+      [14] = "󰏿 ", -- Constant
+      [15] = " ", -- String
+      [16] = "󰎠 ", -- Number
+      [17] = "◩ ", -- Boolean
+      [18] = "󰅪 ", -- Array
+      [19] = "󰅩 ", -- Object
+      [20] = "󰌋 ", -- Key
+      [21] = "󰟢 ", -- Null
+      [22] = " ", -- EnumMember
+      [23] = "󰌗 ", -- Struct
+      [24] = " ", -- Event
+      [25] = "󰆕 ", -- Operator
+      [26] = "󰊄 ", -- TypeParameter
+      [255] = "󰉨 ",-- Macro
+    },
+    use_default_mappings = true,
+    -- Each Integration is auto-detected through plugin presence, however, it can
+    -- be disabled by setting to `false`
+    integrations = {
+      -- Requires you to have `nvim-telescope/telescope.nvim` installed.
+      telescope = nil,
+      -- Requires you to have `folke/snacks.nvim` installed.
+      snacks = nil,
+    },
+    mappings = {
+      ["<esc>"] = actions.close(),        -- Close and cursor to original location
+      ["q"] = actions.close(),
 
-			["j"] = actions.next_sibling,     -- down
-			["k"] = actions.previous_sibling, -- up
+      ["j"] = actions.next_sibling(),     -- Go down
+      ["k"] = actions.previous_sibling(), -- Go up
 
-			["h"] = actions.parent,           -- Move to left panel
-			["l"] = actions.children,         -- Move to right panel
+      ["h"] = actions.parent(),           -- Move to left panel
+      ["l"] = actions.children(),         -- Move to right panel
+      ["0"] = actions.root(),             -- Move to first panel
 
-			["v"] = actions.visual_name,      -- Visual selection of name
-			["V"] = actions.visual_scope,     -- Visual selection of scope
+      ["v"] = actions.visual_name(),      -- Visual selection of name
+      ["V"] = actions.visual_scope(),     -- Visual selection of scope
 
-			["y"] = actions.yank_name,        -- Yank the name to system clipboard "+
-			["Y"] = actions.yank_scope,       -- Yank the scope to system clipboard "+
+      ["y"] = actions.yank_name(),        -- Yank the name to system clipboard "+
+      ["Y"] = actions.yank_scope(),       -- Yank the scope to system clipboard "+
 
-			["i"] = actions.insert_name,      -- Insert at start of name
-			["I"] = actions.insert_scope,     -- Insert at start of scope
+      ["i"] = actions.insert_name(),      -- Insert at start of name
+      ["I"] = actions.insert_scope(),     -- Insert at start of scope
 
-			["a"] = actions.append_name,      -- Insert at end of name
-			["A"] = actions.append_scope,     -- Insert at end of scope
+      ["a"] = actions.append_name(),      -- Insert at end of name
+      ["A"] = actions.append_scope(),     -- Insert at end of scope
 
-			["r"] = actions.rename,           -- Rename currently focused symbol
+      ["r"] = actions.rename(),           -- Rename currently focused symbol
 
-			["d"] = actions.delete,           -- Delete scope
+      ["d"] = actions.delete(),           -- Delete scope
 
-			["f"] = actions.fold_create,      -- Create fold of current scope
-			["F"] = actions.fold_delete,      -- Delete fold of current scope
+      ["f"] = actions.fold_create(),      -- Create fold of current scope
+      ["F"] = actions.fold_delete(),      -- Delete fold of current scope
 
-			["c"] = actions.comment,          -- Comment out current scope
+      ["c"] = actions.comment(),          -- Comment out current scope
 
-			["<enter>"] = actions.select,     -- Goto selected symbol
-			["o"] = actions.select,
-		},
-		lsp = {
-			auto_attach = false,  -- If set to true, you don't need to manually use attach function
-			preference = nil      -- list of lsp server names in order of preference
-		},
-		source_buffer = {
-			follow_node = true,   -- Keep the current node in focus on the source buffer
-			highlight = true,     -- Highlight the currently focused node
-			reorient = "smart",   -- "smart", "top", "mid" or "none"
-		}
-	}
+      ["<enter>"] = actions.select(),     -- Goto selected symbol
+      ["o"] = actions.select(),
+
+      ["J"] = actions.move_down(),        -- Move focused node down
+      ["K"] = actions.move_up(),          -- Move focused node up
+
+      ["s"] = actions.toggle_preview(),   -- Show preview of current node
+
+      ["<C-v>"] = actions.vsplit(),       -- Open selected node in a vertical split
+      ["<C-s>"] = actions.hsplit(),       -- Open selected node in a horizontal split
+
+      ["t"] = actions.fuzzy_find(),       -- Fuzzy finder at current level.
+
+      ["g?"] = actions.help(),            -- Show keymap help window
+    },
+    lsp = {
+      auto_attach = false,   -- If set to true, you don't need to manually use attach function
+      preference = nil,      -- List of lsp server names in order of preference
+    },
+    source_buffer = {
+      follow_node = true,    -- Keep the current node in focus on the source buffer
+      highlight = true,      -- Highlight the currently focused node
+      reorient = "smart",    -- "smart"|"top"|"mid"|"none"
+      scrolloff = nil,       -- scrolloff value when navbuddy is open
+    },
+    node_markers = {
+      enabled = true,
+      icons = {
+        leaf = "  ",
+        leaf_selected = " → ",
+        branch = " ",
+      },
+    },
+    custom_hl_group = nil,   -- "Visual" or any other hl group to use instead of inverted colors
+  }
 <
-=============================================================================
-Actions                                                         *navbuddy-actions*
+Type ~
+`(Navbuddy.config)`
+
+------------------------------------------------------------------------------
+                                                                  *navbuddy-api*
+API
+
+|nvim-navbuddy| provides the following functions for the user.
+
+------------------------------------------------------------------------------
+                                                              *navbuddy.setup()*
+                        `navbuddy.setup`({user_config})
+Configure |nvim-navbuddy|'s options. See more |navbuddy-config|
+Parameters ~
+{user_config} `(Navbuddy.config)`
+
+------------------------------------------------------------------------------
+                                                               *navbuddy.open()*
+                            `navbuddy.open`({opts})
+Opens Navbuddy for the given buffer or options.
+Parameters ~
+{opts} `(optional)` `(number|Navbuddy.openOpts)` Optional buffer number or options table.
+       If a number, it's treated as a buffer number.
+       If a table, it may include a `bufnr` field.
+       If omitted, the current buffer is used.
+
+------------------------------------------------------------------------------
+                                                             *navbuddy.attach()*
+                      `navbuddy.attach`({client}, {bufnr})
+Parameters ~
+{client} `(vim.lsp.Client)`
+{bufnr} `(number)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                              *navbuddy-actions*
+ACTIONS
 
 |nvim-navbuddy| provides the following actions for the user.
 
-*actions.close* (opts)
-	Close the Navbuddy window and return cursor to original location.
+------------------------------------------------------------------------------
+                                                               *actions.close()*
+                               `actions.close`()
+Close the Navbuddy window and return cursor to original location.
 
-*actions.next_sibling* (opts)
-	Move to next_sibling, below current node, in Navbuddy window.
+------------------------------------------------------------------------------
+                                                        *actions.next_sibling()*
+                            `actions.next_sibling`()
+Move to next_sibling, below current node, in Navbuddy window.
 
-*actions.previous_sibling* (opts)
-	Move to previous_sibling, above current node, in Navbuddy window.
+------------------------------------------------------------------------------
+                                                    *actions.previous_sibling()*
+                          `actions.previous_sibling`()
+Move to previous_sibling, above current node, in Navbuddy window.
 
-*actions.parent* (opts)
-	Move to parent of current, left of current node, in Navbuddy window.
+------------------------------------------------------------------------------
+                                                              *actions.parent()*
+                               `actions.parent`()
+Move to parent of current, left of current node, in Navbuddy window.
 
-*actions.children* (opts)
-	Move to children of current, right of current node, in Navbuddy window.
+------------------------------------------------------------------------------
+                                                            *actions.children()*
+                              `actions.children`()
+Move to children of current, right of current node, in Navbuddy window.
 
-*actions.select* (opts)
-	Goto currently focus node.
+------------------------------------------------------------------------------
+                                                                *actions.root()*
+                                `actions.root`()
+Move to root node, the first node left of current node, in Navbuddy window.
 
-*actions.visual_name* (opts)
-	Visual select the name of current node.
+------------------------------------------------------------------------------
+                                                              *actions.select()*
+                               `actions.select`()
+Goto currently focus node.
 
-*actions.visual_scope* (opts)
-	Visual select the scope of current node.
+------------------------------------------------------------------------------
+                                                           *actions.yank_name()*
+                             `actions.yank_name`()
+Yank the name of current node.
 
-*actions.yank_name* (opts)
-	Yank the name of current node.
+------------------------------------------------------------------------------
+                                                          *actions.yank_scope()*
+                             `actions.yank_scope`()
+Yank the scope of current node.
 
-*actions.yank_scope* (opts)
-	Yank the scope of current node.
+------------------------------------------------------------------------------
+                                                         *actions.visual_name()*
+                            `actions.visual_name`()
+Visual select the name of current node.
 
-*actions.insert_name* (opts)
-	Start insert at begin of name.
+------------------------------------------------------------------------------
+                                                        *actions.visual_scope()*
+                            `actions.visual_scope`()
+Visual select the scope of current node.
 
-*actions.insert_scope* (opts)
-	Start insert at begin of scope.
+------------------------------------------------------------------------------
+                                                         *actions.insert_name()*
+                            `actions.insert_name`()
+Start insert at begin of name.
 
-*actions.append_name* (opts)
-	Start insert at end of name.
+------------------------------------------------------------------------------
+                                                        *actions.insert_scope()*
+                            `actions.insert_scope`()
+Start insert at begin of scope.
 
-*actions.append_scope* (opts)
-	Start insert at end of scope.
+------------------------------------------------------------------------------
+                                                         *actions.append_name()*
+                            `actions.append_name`()
+Start insert at end of name.
 
-*actions.rename* (opts)
-	Trigger lsp rename for current node.
+------------------------------------------------------------------------------
+                                                        *actions.append_scope()*
+                            `actions.append_scope`()
+Start insert at end of scope.
 
-*actions.delete* (opts)
-	Delete currently focused scope.
+------------------------------------------------------------------------------
+                                                              *actions.rename()*
+                               `actions.rename`()
+Trigger lsp rename for current node.
 
-*actions.fold_create* (opts)
-	Create fold for current scope. Requires fold methos to be "manual".
+------------------------------------------------------------------------------
+                                                              *actions.delete()*
+                               `actions.delete`()
+Delete currently focused scope.
 
-*actions.fold_delete* (opts)
-	Delete fold for current scope. Requires fold methos to be "manual".
+------------------------------------------------------------------------------
+                                                         *actions.fold_create()*
+                            `actions.fold_create`()
+Create fold for current scope. Requires fold methos to be "manual".
 
-*actions.comment* (opts)
-	Comment selected scope. Require Comment.nvim plugin to be installed.
+------------------------------------------------------------------------------
+                                                         *actions.fold_delete()*
+                            `actions.fold_delete`()
+Delete fold for current scope. Requires fold methos to be "manual".
 
-*actions.move_down* (opts)
-	Move currently focued node down. Copies entire lines and works only in case
-	there are no overlapping lines between current node and next node.
+------------------------------------------------------------------------------
+                                                             *actions.comment()*
+                              `actions.comment`()
+Comment selected scope. Require Comment.nvim plugin to be installed.
 
-*actions.move_up* (opts)
-	Move currently focued node up. Copies entire lines and works only in case
-	there are no overlapping lines between current node and previous node.
+------------------------------------------------------------------------------
+                                                           *actions.move_down()*
+                             `actions.move_down`()
+Move currently focued node down. Copies entire lines and works only in case
+there are no overlapping lines between current node and next node.
 
-=============================================================================
-Highlight                                                    *navbuddy-highlights*
+------------------------------------------------------------------------------
+                                                             *actions.move_up()*
+                              `actions.move_up`()
+Move currently focued node up. Copies entire lines and works only in case
+there are no overlapping lines between current node and previous node.
+
+------------------------------------------------------------------------------
+                                                              *actions.vsplit()*
+                               `actions.vsplit`()
+Opens vertical split with currently selected node.
+Will not remember top line like |winsaveview()| does.
+NOTE: Direction of split is controlled by 'splitright'
+
+------------------------------------------------------------------------------
+                                                              *actions.hsplit()*
+                               `actions.hsplit`()
+Acts akin to vsplit, but splits horizontally.
+NOTE: Direction of split is controlled by 'splitbelow'
+
+------------------------------------------------------------------------------
+                                                           *actions.telescope()*
+                          `actions.telescope`({opts})
+Open Fuzzy finder with telescope to search sibling nodes on current level.
+Can be customized during setup by passing opts table, all configuration
+passed to telescope.nvim's default option can be passed here.
+Parameters ~
+{opts} `(any)` -- telescope config
+
+------------------------------------------------------------------------------
+                                                          *actions.fuzzy_find()*
+                          `actions.fuzzy_find`({opts})
+Open Fuzzy finder with your prefered to search sibling nodes on current level.
+Can be customized during setup by passing opts table, all configuration
+passed to your picker's default option can be passed here.
+Parameters ~
+{opts} `(any)` -- telescope or snacks config
+
+------------------------------------------------------------------------------
+                                                                *actions.help()*
+                                `actions.help`()
+Open mappings help window
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                           *navbuddy-highlights*
+HIGHLIGHT
 
 |nvim-navbuddy| provides the following highlights which get used when
 available.
 
-	`NavbuddyName`  - highlight for name in source buffer
-	`NavbuddyScope` - highlight for scope of context in source buffer
-	`NavbuddyFloatBorder` - Floatborder highlight
+`NavbuddyName`  - highlight for name in source buffer
+`NavbuddyScope` - highlight for scope of context in source buffer
+`NavbuddyFloatBorder` - Floatborder highlight
+`NavbuddyNormalFloat` - Float normal highlight
 
 The following highlights are are used to highlight elements in the navbuddy
 window according to their type. If you have "NavicIcons<type>" highlights
 already defined, these will automatically get linked to them unless defined
 explicitly.
 
-	`NavbuddyFile`
-	`NavbuddyModule`
-	`NavbuddyNamespace`
-	`NavbuddyPackage`
-	`NavbuddyClass`
-	`NavbuddyMethod`
-	`NavbuddyProperty`
-	`NavbuddyField`
-	`NavbuddyConstructor`
-	`NavbuddyEnum`
-	`NavbuddyInterface`
-	`NavbuddyFunction`
-	`NavbuddyVariable`
-	`NavbuddyConstant`
-	`NavbuddyString`
-	`NavbuddyNumber`
-	`NavbuddyBoolean`
-	`NavbuddyArray`
-	`NavbuddyObject`
-	`NavbuddyKey`
-	`NavbuddyNull`
-	`NavbuddyEnumMember`
-	`NavbuddyStruct`
-	`NavbuddyEvent`
-	`NavbuddyOperator`
-	`NavbuddyTypeParameter`
+`NavbuddyFile`
+`NavbuddyModule`
+`NavbuddyNamespace`
+`NavbuddyPackage`
+`NavbuddyClass`
+`NavbuddyMethod`
+`NavbuddyProperty`
+`NavbuddyField`
+`NavbuddyConstructor`
+`NavbuddyEnum`
+`NavbuddyInterface`
+`NavbuddyFunction`
+`NavbuddyVariable`
+`NavbuddyConstant`
+`NavbuddyString`
+`NavbuddyNumber`
+`NavbuddyBoolean`
+`NavbuddyArray`
+`NavbuddyObject`
+`NavbuddyKey`
+`NavbuddyNull`
+`NavbuddyEnumMember`
+`NavbuddyStruct`
+`NavbuddyEvent`
+`NavbuddyOperator`
+`NavbuddyTypeParameter`
 
 
-=============================================================================
-vim:tw=78:ts=4:ft=help:norl:
+ vim:tw=78:ts=8:noet:ft=help:norl:
