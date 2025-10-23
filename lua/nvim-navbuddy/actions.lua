@@ -36,6 +36,16 @@ end
 --- Move to next_sibling, below current node, in Navbuddy window.
 function actions.next_sibling()
   local callback = function(display)
+    -- If we're at root and buffer list is shown, navigate the buffer list
+    if display.focus_node.parent.is_root and display.state.in_buffer_list then
+      for _ = 1, vim.v.count1 do
+        if not display:navigate_buffer_list("down") then
+          break
+        end
+      end
+      return
+    end
+
     if display.focus_node.next == nil then
       return
     end
@@ -53,13 +63,24 @@ function actions.next_sibling()
 
   return {
     callback = callback,
-    description = "Move down to next node",
+    description = "Move down to next node / next buffer",
   }
 end
 
 --- Move to previous_sibling, above current node, in Navbuddy window.
+--- When at root with buffer list shown, navigates up the buffer list.
 function actions.previous_sibling()
   local callback = function(display)
+    -- If we're at root and buffer list is shown, navigate the buffer list
+    if display.focus_node.parent.is_root and display.state.in_buffer_list then
+      for _ = 1, vim.v.count1 do
+        if not display:navigate_buffer_list("up") then
+          break
+        end
+      end
+      return
+    end
+
     if display.focus_node.prev == nil then
       return
     end
@@ -77,14 +98,19 @@ function actions.previous_sibling()
 
   return {
     callback = callback,
-    description = "Move up to previous node",
+    description = "Move up to previous node / previous buffer",
   }
 end
 
 --- Move to parent of current, left of current node, in Navbuddy window.
+--- When at root, allows navigating the buffer list in the left panel.
 function actions.parent()
   local callback = function(display)
+    -- If we're at root level, try to select a buffer from the left panel
     if display.focus_node.parent.is_root then
+      if display.state.in_buffer_list then
+        display:select_buffer()
+      end
       return
     end
 
@@ -96,7 +122,7 @@ function actions.parent()
 
   return {
     callback = callback,
-    description = "Move left to parent level",
+    description = "Move left to parent level / select buffer",
   }
 end
 

@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(nvim:*)",
-      "Read(///**)"
+      "Read(///**)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []

@@ -128,6 +128,8 @@ function display:new(obj)
     leaving_window_for_reorientation = false,
     closed = false,
     source_buffer_scrolloff = nil,
+    in_buffer_list = false, -- Track if we're navigating buffers in left panel
+    buffer_list = nil,      -- Store current buffer list
     -- user_gui_cursor = nil,
   }
 
@@ -432,9 +434,14 @@ function display:redraw()
 
   if node.parent.is_root then
     -- buffer.clear(self.left)
+    local buf_utils = require('nvim-navbuddy.buffer.utils')
+    self.state.buffer_list = buf_utils.get_current_buffers(self.for_buf)
     buffer.fill_files(self.left, self.for_buf, self.config)
+    self.state.in_buffer_list = true
   else
     buffer.fill_lsp(self.left, node.parent, self.config)
+    self.state.in_buffer_list = false
+    self.state.buffer_list = nil
   end
   local winsize = {
     w = vim.api.nvim_win_get_width(self.title.winid),
@@ -442,6 +449,45 @@ function display:redraw()
   }
   local opts = { winsize = winsize, align = "center", separator = "  " }
   buffer.fill_title(self.title, node, self.config, opts)
+end
+
+function display:select_buffer()
+  if not self.state.in_buffer_list or not self.state.buffer_list then
+    return
+  end
+
+  local cursor_pos = vim.api.nvim_win_get_cursor(self.left.winid)
+  local selected_buf_info = self.state.buffer_list[cursor_pos[1]]
+
+  if selected_buf_info and selected_buf_info.data then
+    local target_bufnr = selected_buf_info.data.buffer
+
+    -- Close navbuddy
+    self:close()
+
+    -- Switch to the selected buffer
+    vim.api.nvim_set_current_buf(target_bufnr)
+  end
+end
+
+function display:navigate_buffer_list(direction)
+  if not self.state.in_buffer_list or not self.state.buffer_list then
+    return false
+  end
+
+  local cursor_pos = vim.api.nvim_win_get_cursor(self.left.winid)
+  local new_pos = cursor_pos[1]
+
+  if direction == "up" and new_pos > 1 then
+    new_pos = new_pos - 1
+  elseif direction == "down" and new_pos < #self.state.buffer_list then
+    new_pos = new_pos + 1
+  else
+    return false
+  end
+
+  vim.api.nvim_win_set_cursor(self.left.winid, { new_pos, 0 })
+  return true
 end
 
 function display:close()
