@@ -462,12 +462,67 @@ function display:select_buffer()
   if selected_buf_info and selected_buf_info.data then
     local target_bufnr = selected_buf_info.data.buffer
 
-    -- Close navbuddy
-    self:close()
+    -- Update the source buffer display window to show the new buffer
+    vim.api.nvim_win_set_buf(self.for_win, target_bufnr)
 
-    -- Switch to the selected buffer
-    vim.api.nvim_set_current_buf(target_bufnr)
+    -- Reload LSP data for the new buffer
+    self:reload_buffer(target_bufnr)
   end
+end
+
+function display:reload_buffer(bufnr)
+  local navic = require("nvim-navic.lib")
+
+  -- Store reference to self for closure
+  local self_ref = self
+
+  -- Check if buffer has LSP attached
+  local clients = vim.lsp.get_clients({ bufnr = bufnr })
+  local lsp_client = nil
+
+  for _, client in ipairs(clients) do
+    if client.server_capabilities.documentSymbolProvider then
+      lsp_client = client
+      break
+    end
+  end
+
+  if not lsp_client then
+    vim.notify("No LSP server attached to buffer", vim.log.levels.WARN)
+    return
+  end
+
+  -- Request symbols for the new buffer
+  navic.request_symbol(bufnr, function(buf, symbols)
+    navic.update_data(buf, symbols)
+    navic.update_context(buf)
+    local context_data = navic.get_context_data(buf)
+
+    if not context_data or #context_data == 0 then
+      vim.notify("No symbols found in buffer", vim.log.levels.WARN)
+      return
+    end
+
+    -- Get the root node
+    local root_node = context_data[1]
+    while root_node.parent and not root_node.parent.is_root do
+      root_node = root_node.parent
+    end
+
+    -- Find the first valid child node to focus on
+    local focus_node = root_node
+    if root_node.children and #root_node.children > 0 then
+      focus_node = root_node.children[1]
+    end
+
+    -- Update display state
+    self_ref.for_buf = buf
+    self_ref.focus_node = focus_node
+    self_ref.lsp_name = lsp_client.name
+
+    -- Redraw the display with new data
+    self_ref:redraw()
+  end, lsp_client)
 end
 
 function display:navigate_buffer_list(direction)
