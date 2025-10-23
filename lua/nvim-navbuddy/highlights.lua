@@ -1,3 +1,47 @@
+---@text HIGHLIGHT
+---
+--- |nvim-navbuddy| provides the following highlights which get used when
+--- available.
+---
+--- `NavbuddyName`  - highlight for name in source buffer
+--- `NavbuddyScope` - highlight for scope of context in source buffer
+--- `NavbuddyFloatBorder` - Floatborder highlight
+--- `NavbuddyNormalFloat` - Float normal highlight
+---
+--- The following highlights are are used to highlight elements in the navbuddy
+--- window according to their type. If you have "NavicIcons<type>" highlights
+--- already defined, these will automatically get linked to them unless defined
+--- explicitly.
+---
+--- `NavbuddyFile`
+--- `NavbuddyModule`
+--- `NavbuddyNamespace`
+--- `NavbuddyPackage`
+--- `NavbuddyClass`
+--- `NavbuddyMethod`
+--- `NavbuddyProperty`
+--- `NavbuddyField`
+--- `NavbuddyConstructor`
+--- `NavbuddyEnum`
+--- `NavbuddyInterface`
+--- `NavbuddyFunction`
+--- `NavbuddyVariable`
+--- `NavbuddyConstant`
+--- `NavbuddyString`
+--- `NavbuddyNumber`
+--- `NavbuddyBoolean`
+--- `NavbuddyArray`
+--- `NavbuddyObject`
+--- `NavbuddyKey`
+--- `NavbuddyNull`
+--- `NavbuddyEnumMember`
+--- `NavbuddyStruct`
+--- `NavbuddyEvent`
+--- `NavbuddyOperator`
+--- `NavbuddyTypeParameter`
+---@tag navbuddy-highlights
+---@toc_entry Highlights
+
 local navic = require("nvim-navic.lib")
 local set_hl = vim.api.nvim_set_hl
 local get_hl = vim.api.nvim_get_hl_by_name
@@ -34,18 +78,181 @@ local function darken(color, percent)
   return new_color
 end
 
-local function highlight_setup()
+---@private
+---@param style BorderConfig
+---@param section SectionName
+---@return any
+local function get_border_chars(style, section)
+  if style == "default" then
+    style = "single"
+  end
+  if style ~= "single" and style ~= "rounded" and style ~= "double" and style ~= "solid" then
+    return style
+  end
+
+	-- stylua: ignore
+	local border_chars = {
+		top_left = {
+			single  = "┌",
+			rounded = "╭",
+			double  = "╔",
+			solid   = "▛",
+		},
+		top = {
+			single  = "─",
+			rounded = "─",
+			double  = "═",
+			solid   = "▀",
+		},
+		top_right = {
+			single  = "┐",
+			rounded = "╮",
+			double  = "╗",
+			solid   = "▜",
+		},
+		right = {
+			single  = "│",
+			rounded = "│",
+			double  = "║",
+			solid   = "▐",
+		},
+		bottom_right = {
+			single  = "┘",
+			rounded = "╯",
+			double  = "╝",
+			solid   = "▟",
+		},
+		bottom = {
+			single  = "─",
+			rounded = "─",
+			double  = "═",
+			solid   = "▄",
+		},
+		bottom_left = {
+			single  = "└",
+			rounded = "╰",
+			double  = "╚",
+			solid   = "▙",
+		},
+		left = {
+			single  = "│",
+			rounded = "│",
+			double  = "║",
+			solid   = "▌",
+		},
+		top_T = {
+			single  = "┬",
+			rounded = "┬",
+			double  = "╦",
+			solid   = "▛",
+		},
+		bottom_T = {
+			single  = "┴",
+			rounded = "┴",
+			double  = "╩",
+			solid   = "▙",
+		},
+		blank = "",
+	}
+
+  local border_chars_map = {
+    left = {
+      style = {
+        border_chars.top_left[style],
+        border_chars.top[style],
+        border_chars.top[style],
+        border_chars.blank,
+        border_chars.bottom[style],
+        border_chars.bottom[style],
+        border_chars.bottom_left[style],
+        border_chars.left[style],
+      },
+    },
+    mid = {
+      style = {
+        border_chars.top_T[style],
+        border_chars.top[style],
+        border_chars.top[style],
+        border_chars.blank,
+        border_chars.bottom[style],
+        border_chars.bottom[style],
+        border_chars.bottom_T[style],
+        border_chars.left[style],
+      },
+    },
+    right = {
+      border_chars.top_T[style],
+      border_chars.top[style],
+      border_chars.top_right[style],
+      border_chars.right[style],
+      border_chars.bottom_right[style],
+      border_chars.bottom[style],
+      border_chars.bottom_T[style],
+      border_chars.left[style],
+    },
+  }
+  return border_chars_map[section]
+end
+---@private
+---@param config Navbuddy.config
+local function highlight_setup(config)
   for lsp_num = 1, 26 do
-    local navbuddy_ok, _ = pcall(get_color_from_hl, "Navbuddy" .. navic_num(lsp_num))
-    local navic_ok, navic_hl = pcall(get_color_from_hl, "NavicIcons" .. navic_num(lsp_num))
+    local navbuddy_ok, _ = pcall(
+      vim.api.nvim_get_hl_by_name,
+      "Navbuddy" .. navic.adapt_lsp_num_to_str(lsp_num),
+      false
+    )
+    local navic_ok, navic_hl =
+      pcall(
+        vim.api.nvim_get_hl_by_name,
+        "NavicIcons" .. navic.adapt_lsp_num_to_str(lsp_num),
+        true
+      )
+
     if not navbuddy_ok and navic_ok then
       navic_hl = navic_hl["foreground"]
-      local navic_hldim = darken(navic_hl, 30)
-      set_hl(0, "Navbuddy" .. navic_num(lsp_num), { fg = navic_hl })
-      if #navic_hldim == 7 then
-        set_hl(0, "Navbuddy" .. navic_num(lsp_num) .. "Dim", { fg = navic_hldim })
-      end
+      vim.api.nvim_set_hl(0, "Navbuddy" .. navic.adapt_lsp_num_to_str(lsp_num), { fg = navic_hl })
     end
+
+    local ok, navbuddy_hl = pcall(
+      vim.api.nvim_get_hl_by_name,
+      "Navbuddy" .. navic.adapt_lsp_num_to_str(lsp_num),
+      true
+    )
+
+    if ok then
+      navbuddy_hl = navbuddy_hl["foreground"]
+
+      local highlight
+      if config.custom_hl_group ~= nil then
+        highlight = { link = config.custom_hl_group }
+      else
+        highlight = { bg = navbuddy_hl }
+      end
+      vim.api.nvim_set_hl(0, "NavbuddyCursorLine" .. navic.adapt_lsp_num_to_str(lsp_num), highlight)
+    else
+      local _, normal_hl = pcall(vim.api.nvim_get_hl_by_name, "Normal", true)
+      normal_hl = normal_hl["foreground"]
+      vim.api.nvim_set_hl(0, "Navbuddy" .. navic.adapt_lsp_num_to_str(lsp_num), { fg = normal_hl })
+
+      local highlight
+      if config.custom_hl_group ~= nil then
+        highlight = { link = config.custom_hl_group }
+      else
+        highlight = { bg = normal_hl }
+      end
+      vim.api.nvim_set_hl(0, "NavbuddyCursorLine" .. navic.adapt_lsp_num_to_str(lsp_num), highlight)
+    end
+    -- local navbuddy_ok, _ = pcall(get_color_from_hl, "Navbuddy" .. navic_num(lsp_num))
+    -- local navic_ok, navic_hl = pcall(get_color_from_hl, "NavicIcons" .. navic_num(lsp_num))
+    -- if not navbuddy_ok and navic_ok then
+    --   navic_hl = navic_hl["foreground"]
+    --   local navic_hldim = darken(navic_hl, 30)
+    --   set_hl(0, "Navbuddy" .. navic_num(lsp_num), { fg = navic_hl })
+    --   if #navic_hldim == 7 then
+    --     set_hl(0, "Navbuddy" .. navic_num(lsp_num) .. "Dim", { fg = navic_hldim })
+    --   end
+    -- end
 
     -- local ok, navbuddy_hl = pcall(vim.api.nvim_get_hl_by_name, "Navbuddy" .. navic.adapt_lsp_num_to_str(lsp_num), true)
     -- if ok then
@@ -59,29 +266,68 @@ local function highlight_setup()
     -- end
   end
 
-  local ok, _ = pcall(get_hl, "NavbuddyCursorLine", false)
+  -- local ok, _ = pcall(get_hl, "NavbuddyCursorLine", false)
+  -- if not ok then
+  --   set_hl(0, "NavbuddyCursorLine", { reverse = true, bold = true })
+  -- end
+
+  -- ok, _ = pcall(get_hl, "NavbuddyCursor", false)
+  -- if not ok then
+  --   set_hl(0, "NavbuddyCursor", { bg = "#000000", blend = 100 })
+  -- end
+
+  -- ok, _ = pcall(get_hl, "NavbuddyName", false)
+  -- if not ok then
+  --   set_hl(0, "NavbuddyName", { link = "IncSearch" })
+  -- end
+
+  -- ok, _ = pcall(get_hl, "NavbuddyScope", false)
+  -- if not ok then
+  --   set_hl(0, "NavbuddyScope", { link = "Visual" })
+  -- end
+
+  -- ok, _ = pcall(get_hl, "NavbuddyFloatBorder", false)
+  -- if not ok then
+  --   set_hl(0, "NavbuddyFloatBorder", { link = "FloatBorder" })
+  -- end
+
+  -- ok, _ = pcall(vim.api.nvim_get_hl_by_name, "NavbuddyNormalFloat", false)
+  -- if not ok then
+  --   vim.api.nvim_set_hl(0, "NavbuddyNormalFloat", { link = "NormalFloat" })
+  -- end
+
+  local ok, _ = pcall(vim.api.nvim_get_hl_by_name, "NavbuddyCursorLine", false)
   if not ok then
-    set_hl(0, "NavbuddyCursorLine", { reverse = true, bold = true })
+    local highlight
+    if config.custom_hl_group ~= nil then
+      highlight = { link = config.custom_hl_group }
+    else
+      highlight = { reverse = true, bold = true }
+    end
+    vim.api.nvim_set_hl(0, "NavbuddyCursorLine", highlight)
   end
 
-  ok, _ = pcall(get_hl, "NavbuddyCursor", false)
+  ok, _ = pcall(vim.api.nvim_get_hl_by_name, "NavbuddyCursor", false)
   if not ok then
-    set_hl(0, "NavbuddyCursor", { bg = "#000000", blend = 100 })
+    vim.api.nvim_set_hl(0, "NavbuddyCursor", {
+      bg = "#000000",
+      blend = 100,
+    })
   end
 
-  ok, _ = pcall(get_hl, "NavbuddyName", false)
+  ok, _ = pcall(vim.api.nvim_get_hl_by_name, "NavbuddyName", false)
   if not ok then
-    set_hl(0, "NavbuddyName", { link = "IncSearch" })
+    vim.api.nvim_set_hl(0, "NavbuddyName", { link = "IncSearch" })
   end
 
-  ok, _ = pcall(get_hl, "NavbuddyScope", false)
+  ok, _ = pcall(vim.api.nvim_get_hl_by_name, "NavbuddyScope", false)
   if not ok then
-    set_hl(0, "NavbuddyScope", { link = "Visual" })
+    vim.api.nvim_set_hl(0, "NavbuddyScope", { link = "Visual" })
   end
 
-  ok, _ = pcall(get_hl, "NavbuddyFloatBorder", false)
+  ok, _ = pcall(vim.api.nvim_get_hl_by_name, "NavbuddyFloatBorder", false)
   if not ok then
-    set_hl(0, "NavbuddyFloatBorder", { link = "FloatBorder" })
+    vim.api.nvim_set_hl(0, "NavbuddyFloatBorder", { link = "FloatBorder" })
   end
 
   ok, _ = pcall(vim.api.nvim_get_hl_by_name, "NavbuddyNormalFloat", false)
@@ -101,6 +347,7 @@ local function highlight_setup()
 end
 
 return {
+  get_border_chars = get_border_chars,
   get_color_from_hl = get_color_from_hl,
   darken = darken,
   setup = highlight_setup,

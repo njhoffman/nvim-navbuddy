@@ -4,7 +4,6 @@ local nui_menu = require("nui.menu")
 local menu_display = require("nvim-navbuddy.display.menu")
 local title_display = require("nvim-navbuddy.display.title")
 local state = require("nvim-navbuddy.state")
-local config = require("nvim-navbuddy.config")
 
 local function choose_lsp_menu(for_buf, make_request)
   local style = nil

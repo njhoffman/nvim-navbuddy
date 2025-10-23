@@ -11,13 +11,12 @@ local border = require("nvim-navbuddy.border")
 local display = {}
 
 function display:new(obj)
-  highlights.setup()
-
   -- Object
   setmetatable(obj, self)
   self.__index = self
 
   local config = obj.config
+  highlights.setup(config)
 
   local title_popup = nui_popup({
     focusable = false,

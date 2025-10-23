@@ -1,3 +1,5 @@
+local utils = require("nvim-navbuddy.utils")
+
 local actions = {}
 
 local function fix_end_character_position(bufnr, name_range_or_scope)
@@ -12,6 +14,7 @@ local function fix_end_character_position(bufnr, name_range_or_scope)
   end
 end
 
+--- Close the Navbuddy window and return cursor to original location.
 function actions.close()
   local callback = function(display)
     display:close()
@@ -24,6 +27,7 @@ function actions.close()
   }
 end
 
+--- Move to next_sibling, below current node, in Navbuddy window.
 function actions.next_sibling()
   local callback = function(display)
     if display.focus_node.next == nil then
@@ -47,6 +51,7 @@ function actions.next_sibling()
   }
 end
 
+--- Move to previous_sibling, above current node, in Navbuddy window.
 function actions.previous_sibling()
   local callback = function(display)
     if display.focus_node.prev == nil then
@@ -70,6 +75,7 @@ function actions.previous_sibling()
   }
 end
 
+--- Move to parent of current, left of current node, in Navbuddy window.
 function actions.parent()
   local callback = function(display)
     if display.focus_node.parent.is_root then
@@ -88,10 +94,11 @@ function actions.parent()
   }
 end
 
+--- Move to children of current, right of current node, in Navbuddy window.
 function actions.children()
   local callback = function(display)
     if display.focus_node.children == nil then
-      -- actions.select().callback(display)
+      actions.select().callback(display)
       return
     end
 
@@ -112,6 +119,7 @@ function actions.children()
   }
 end
 
+--- Move to root node, the first node left of current node, in Navbuddy window.
 function actions.root()
   local callback = function(display)
     if display.focus_node.parent.is_root then
@@ -132,9 +140,12 @@ function actions.root()
   }
 end
 
+--- Goto currently focus node.
 function actions.select()
   local callback = function(display)
     display:close()
+    fix_end_character_position(display.for_buf, display.focus_node.name_range)
+    fix_end_character_position(display.for_buf, display.focus_node.scope)
     -- to push location to jumplist:
     -- move display to start_cursor, set mark ', then move to new location
     vim.api.nvim_win_set_cursor(display.for_win, display.start_cursor)
@@ -171,9 +182,11 @@ function actions.select()
   }
 end
 
+--- Yank the name of current node.
 function actions.yank_name()
   local callback = function(display)
     display:close()
+    fix_end_character_position(display.for_buf, display.focus_node.name_range)
     vim.api.nvim_win_set_cursor(
       display.for_win,
       { display.focus_node.name_range["start"].line, display.focus_node.name_range["start"].character }
@@ -192,9 +205,11 @@ function actions.yank_name()
   }
 end
 
+--- Yank the scope of current node.
 function actions.yank_scope()
   local callback = function(display)
     display:close()
+    fix_end_character_position(display.for_buf, display.focus_node.scope)
     vim.api.nvim_win_set_cursor(
       display.for_win,
       { display.focus_node.scope["start"].line, display.focus_node.scope["start"].character }
@@ -213,9 +228,11 @@ function actions.yank_scope()
   }
 end
 
+--- Visual select the name of current node.
 function actions.visual_name()
   local callback = function(display)
     display:close()
+    fix_end_character_position(display.for_buf, display.focus_node.name_range)
     vim.api.nvim_win_set_cursor(
       display.for_win,
       { display.focus_node.name_range["start"].line, display.focus_node.name_range["start"].character }
@@ -233,9 +250,11 @@ function actions.visual_name()
   }
 end
 
+--- Visual select the scope of current node.
 function actions.visual_scope()
   local callback = function(display)
     display:close()
+    fix_end_character_position(display.for_buf, display.focus_node.scope)
     vim.api.nvim_win_set_cursor(
       display.for_win,
       { display.focus_node.scope["start"].line, display.focus_node.scope["start"].character }
@@ -253,9 +272,11 @@ function actions.visual_scope()
   }
 end
 
+--- Start insert at begin of name.
 function actions.insert_name()
   local callback = function(display)
     display:close()
+    fix_end_character_position(display.for_buf, display.focus_node.name_range)
     vim.api.nvim_win_set_cursor(
       display.for_win,
       { display.focus_node.name_range["start"].line, display.focus_node.name_range["start"].character }
@@ -269,9 +290,11 @@ function actions.insert_name()
   }
 end
 
+--- Start insert at begin of scope.
 function actions.insert_scope()
   local callback = function(display)
     display:close()
+    fix_end_character_position(display.for_buf, display.focus_node.scope)
     vim.api.nvim_win_set_cursor(
       display.for_win,
       { display.focus_node.scope["start"].line, display.focus_node.scope["start"].character }
@@ -285,9 +308,11 @@ function actions.insert_scope()
   }
 end
 
+--- Start insert at end of name.
 function actions.append_name()
   local callback = function(display)
     display:close()
+    fix_end_character_position(display.for_buf, display.focus_node.name_range)
     vim.api.nvim_win_set_cursor(
       display.for_win,
       { display.focus_node.name_range["end"].line, display.focus_node.name_range["end"].character - 1 }
@@ -301,6 +326,7 @@ function actions.append_name()
   }
 end
 
+--- Start insert at end of scope.
 function actions.append_scope()
   local callback = function(display)
     display:close()
@@ -334,6 +360,7 @@ function actions.append_scope()
   }
 end
 
+--- Trigger lsp rename for current node.
 function actions.rename()
   local callback = function(display)
     display:close()
@@ -346,6 +373,7 @@ function actions.rename()
   }
 end
 
+--- Delete currently focused scope.
 function actions.delete()
   local callback = function(display)
     actions.visual_scope().callback(display)
@@ -358,6 +386,7 @@ function actions.delete()
   }
 end
 
+--- Create fold for current scope. Requires fold methos to be "manual".
 function actions.fold_create()
   local callback = function(display)
     if vim.o.foldmethod ~= "manual" then
@@ -365,6 +394,7 @@ function actions.fold_create()
       return
     end
 
+    fix_end_character_position(display.for_buf, display.focus_node.scope)
     display.state.leaving_window_for_action = true
     vim.api.nvim_set_current_win(display.for_win)
     vim.api.nvim_win_set_cursor(
@@ -387,6 +417,7 @@ function actions.fold_create()
   }
 end
 
+--- Delete fold for current scope. Requires fold methos to be "manual".
 function actions.fold_delete()
   local callback = function(display)
     if vim.o.foldmethod ~= "manual" then
@@ -394,6 +425,7 @@ function actions.fold_delete()
       return
     end
 
+    fix_end_character_position(display.for_buf, display.focus_node.scope)
     display.state.leaving_window_for_action = true
     vim.api.nvim_set_current_win(display.for_win)
     vim.api.nvim_win_set_cursor(
@@ -416,49 +448,35 @@ function actions.fold_delete()
   }
 end
 
+--- Comment selected scope. Require Comment.nvim plugin to be installed.
 function actions.comment()
   local callback = function(display)
-    local status_ok_comment, comment = pcall(require, "Comment.api")
-    if status_ok_comment then
-      fix_end_character_position(display.for_buf, display.focus_node.scope)
-      display.state.leaving_window_for_action = true
-      vim.api.nvim_set_current_win(display.for_win)
-      vim.api.nvim_buf_set_mark(
-        display.for_buf,
-        "<",
-        display.focus_node.scope["start"].line,
-        display.focus_node.scope["start"].character,
-        {}
-      )
-      vim.api.nvim_buf_set_mark(
-        display.for_buf,
-        ">",
-        display.focus_node.scope["end"].line,
-        display.focus_node.scope["end"].character,
-        {}
-      )
-      comment.locked("toggle.linewise")("v")
-      vim.api.nvim_set_current_win(display.mid.winid)
-      display.state.leaving_window_for_action = false
+    local status_ok, comment = pcall(require, "Comment.api")
+    if not status_ok then
+      vim.notify("Comment.nvim not found", vim.log.levels.ERROR)
       return
     end
 
-    local status_ok_mini, mini_comment = pcall(require, "mini.comment")
-    if status_ok_mini then
-      local start_line = display.focus_node.scope["start"].line
-      local end_line = display.focus_node.scope["end"].line
-
-      display.state.leaving_window_for_action = true
-      vim.api.nvim_set_current_win(display.for_win)
-
-      mini_comment.toggle_lines(start_line, end_line, {})
-
-      vim.api.nvim_set_current_win(display.mid.winid)
-      display.state.leaving_window_for_action = false
-      return
-    end
-
-    vim.notify("Neither Comment.nvim nor mini.comment found", vim.log.levels.ERROR)
+    fix_end_character_position(display.for_buf, display.focus_node.scope)
+    display.state.leaving_window_for_action = true
+    vim.api.nvim_set_current_win(display.for_win)
+    vim.api.nvim_buf_set_mark(
+      display.for_buf,
+      "<",
+      display.focus_node.scope["start"].line,
+      display.focus_node.scope["start"].character,
+      {}
+    )
+    vim.api.nvim_buf_set_mark(
+      display.for_buf,
+      ">",
+      display.focus_node.scope["end"].line,
+      display.focus_node.scope["end"].character,
+      {}
+    )
+    comment.locked("toggle.linewise")("v")
+    vim.api.nvim_set_current_win(display.mid.winid)
+    display.state.leaving_window_for_action = false
   end
 
   return {
@@ -473,6 +491,9 @@ local function swap_nodes(for_buf, nodeA, nodeB)
   --   |
   --   v
   -- nodeB
+
+  fix_end_character_position(for_buf, nodeA.scope)
+  fix_end_character_position(for_buf, nodeB.scope)
 
   if nodeA.scope["end"].line >= nodeB.scope["start"].line and nodeA.parent == nodeB.parent then
     vim.notify("Cannot swap!", vim.log.levels.ERROR)
@@ -537,6 +558,8 @@ local function swap_nodes(for_buf, nodeA, nodeB)
   )
 end
 
+--- Move currently focued node down. Copies entire lines and works only in case
+--- there are no overlapping lines between current node and next node.
 function actions.move_down()
   local callback = function(display)
     if display.focus_node.next == nil then
@@ -554,6 +577,8 @@ function actions.move_down()
   }
 end
 
+--- Move currently focued node up. Copies entire lines and works only in case
+--- there are no overlapping lines between current node and previous node.
 function actions.move_up()
   local callback = function(display)
     if display.focus_node.prev == nil then
@@ -568,36 +593,6 @@ function actions.move_up()
   return {
     callback = callback,
     description = "Move code block up",
-  }
-end
-
-function actions.vsplit()
-  local callback = function(display)
-    actions.close().callback(display)
-    vim.api.nvim_command("vsplit")
-    display.for_win = vim.api.nvim_get_current_win()
-    actions.select().callback(display)
-    vim.api.nvim_command("normal! zv")
-  end
-
-  return {
-    callback = callback,
-    description = "Open selected node in a vertical split",
-  }
-end
-
-function actions.hsplit()
-  local callback = function(display)
-    actions.close().callback(display)
-    vim.api.nvim_command("split")
-    display.for_win = vim.api.nvim_get_current_win()
-    actions.select().callback(display)
-    vim.api.nvim_command("normal! zv")
-  end
-
-  return {
-    callback = callback,
-    description = "Open selected node in a horizontal split",
   }
 end
 
@@ -616,80 +611,48 @@ function actions.toggle_preview()
   }
 end
 
+--- Opens vertical split with currently selected node.
+--- Will not remember top line like |winsaveview()| does.
+--- NOTE: Direction of split is controlled by 'splitright'
+function actions.vsplit()
+  local callback = function(display)
+    actions.close().callback(display)
+    vim.api.nvim_command("vsplit")
+    display.for_win = vim.api.nvim_get_current_win()
+    actions.select().callback(display)
+    vim.api.nvim_command("normal! zv")
+  end
+
+  return {
+    callback = callback,
+    description = "Open selected node in a vertical split",
+  }
+end
+
+--- Acts akin to vsplit, but splits horizontally.
+--- NOTE: Direction of split is controlled by 'splitbelow'
+function actions.hsplit()
+  local callback = function(display)
+    actions.close().callback(display)
+    vim.api.nvim_command("split")
+    display.for_win = vim.api.nvim_get_current_win()
+    actions.select().callback(display)
+    vim.api.nvim_command("normal! zv")
+  end
+
+  return {
+    callback = callback,
+    description = "Open selected node in a horizontal split",
+  }
+end
+
+--- Open Fuzzy finder with telescope to search sibling nodes on current level.
+--- Can be customized during setup by passing opts table, all configuration
+--- passed to telescope.nvim's default option can be passed here.
+---@param opts any -- telescope config
 function actions.telescope(opts)
   local callback = function(display)
-    local status_ok, _ = pcall(require, "telescope")
-    if not status_ok then
-      vim.notify("telescope.nvim not found", vim.log.levels.ERROR)
-      return
-    end
-
-    local navic = require("nvim-navic.lib")
-    local pickers = require("telescope.pickers")
-    local entry_display = require("telescope.pickers.entry_display")
-    local finders = require("telescope.finders")
-    local conf = require("telescope.config").values
-    local t_actions = require("telescope.actions")
-    local action_state = require("telescope.actions.state")
-
-    local displayer = entry_display.create({
-      separator = " ",
-      items = {
-        { width = 14 },
-        { remaining = true },
-      },
-    })
-
-    local function make_display(entry)
-      local node = entry.value
-      local kind = navic.adapt_lsp_num_to_str(node.kind)
-      local kind_hl = "Navbuddy" .. kind
-      local name_hl = "NavbuddyNormalFloat"
-      local columns = {
-        { string.lower(kind), kind_hl },
-        { node.name, name_hl },
-      }
-      return displayer(columns)
-    end
-
-    local function make_entry(node)
-      return {
-        value = node,
-        display = make_display,
-        name = node.name,
-        ordinal = string.lower(navic.adapt_lsp_num_to_str(node.kind)) .. " " .. node.name,
-        lnum = node.name_range["start"].line,
-        col = node.name_range["start"].character,
-        bufnr = display.for_buf,
-        filename = vim.api.nvim_buf_get_name(display.for_buf),
-      }
-    end
-
-    display:close()
-    pickers
-      .new(opts, {
-        prompt_title = "Fuzzy Search",
-        finder = finders.new_table({
-          results = display.focus_node.parent.children,
-          entry_maker = make_entry,
-        }),
-        sorter = conf.generic_sorter(opts),
-        previewer = conf.qflist_previewer(opts),
-        attach_mappings = function(prompt_bufnr, _)
-          t_actions.select_default:replace(function()
-            local selection = action_state.get_selected_entry()
-            display.focus_node = selection.value
-            t_actions.close(prompt_bufnr)
-          end)
-          t_actions.close:enhance({
-            post = function()
-              display = require("nvim-navbuddy.display.menu"):new(display)
-            end,
-          })
-          return true
-        end,
-      })
-      :find()
+    require("nvim-navbuddy.picker.telescope").find(opts, display)
   end
 
   return {
@@ -698,6 +661,109 @@ function actions.telescope(opts)
   }
 end
 
+-- function actions.telescope(opts)
+--   local callback = function(display)
+--     local status_ok, _ = pcall(require, "telescope")
+--     if not status_ok then
+--       vim.notify("telescope.nvim not found", vim.log.levels.ERROR)
+--       return
+--     end
+
+--     local navic = require("nvim-navic.lib")
+--     local pickers = require("telescope.pickers")
+--     local entry_display = require("telescope.pickers.entry_display")
+--     local finders = require("telescope.finders")
+--     local conf = require("telescope.config").values
+--     local t_actions = require("telescope.actions")
+--     local action_state = require("telescope.actions.state")
+
+--     local displayer = entry_display.create({
+--       separator = " ",
+--       items = {
+--         { width = 14 },
+--         { remaining = true },
+--       },
+--     })
+
+--     local function make_display(entry)
+--       local node = entry.value
+--       local kind = navic.adapt_lsp_num_to_str(node.kind)
+--       local kind_hl = "Navbuddy" .. kind
+--       local name_hl = "NavbuddyNormalFloat"
+--       local columns = {
+--         { string.lower(kind), kind_hl },
+--         { node.name, name_hl },
+--       }
+--       return displayer(columns)
+--     end
+
+--     local function make_entry(node)
+--       return {
+--         value = node,
+--         display = make_display,
+--         name = node.name,
+--         ordinal = string.lower(navic.adapt_lsp_num_to_str(node.kind)) .. " " .. node.name,
+--         lnum = node.name_range["start"].line,
+--         col = node.name_range["start"].character,
+--         bufnr = display.for_buf,
+--         filename = vim.api.nvim_buf_get_name(display.for_buf),
+--       }
+--     end
+
+--     display:close()
+--     pickers
+--       .new(opts, {
+--         prompt_title = "Fuzzy Search",
+--         finder = finders.new_table({
+--           results = display.focus_node.parent.children,
+--           entry_maker = make_entry,
+--         }),
+--         sorter = conf.generic_sorter(opts),
+--         previewer = conf.qflist_previewer(opts),
+--         attach_mappings = function(prompt_bufnr, _)
+--           t_actions.select_default:replace(function()
+--             local selection = action_state.get_selected_entry()
+--             display.focus_node = selection.value
+--             t_actions.close(prompt_bufnr)
+--           end)
+--           t_actions.close:enhance({
+--             post = function()
+--               display = require("nvim-navbuddy.display.menu"):new(display)
+--             end,
+--           })
+--           return true
+--         end,
+--       })
+--       :find()
+--   end
+
+--   return {
+--     callback = callback,
+--     description = "Fuzzy search current level with telescope",
+--   }
+-- end
+
+--- Open Fuzzy finder with your prefered to search sibling nodes on current level.
+--- Can be customized during setup by passing opts table, all configuration
+--- passed to your picker's default option can be passed here.
+---@param opts any -- telescope or snacks config
+function actions.fuzzy_find(opts)
+  ---@param display Navbuddy.display
+  local callback = function(display)
+    if utils.check_integration("telescope", display.config) then
+      require("nvim-navbuddy.picker.telescope").find(opts, display)
+    else
+      require("nvim-navbuddy.picker.snacks").find(opts, display)
+    end
+  end
+
+  return {
+    callback = callback,
+    description = "Fuzzy search current level with fuzzy picker",
+  }
+end
+
+--- Open mappings help window
 function actions.help()
   local callback = function(display)
     display:close()
@@ -721,7 +787,7 @@ function actions.help()
 
     local function quit_help()
       help_popup:unmount()
-      require("nvim-navbuddy.display"):new(display)
+      require("nvim-navbuddy.display").new(display)
     end
 
     help_popup:map("n", "q", quit_help)

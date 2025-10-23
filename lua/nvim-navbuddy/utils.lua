@@ -116,6 +116,21 @@ local get_layout_opts = function(focus_node)
   return opts
 end
 
+---@param name string
+---@param config Navbuddy.config
+---@return boolean
+local check_integration = function(name, config)
+  local enabled = config.integrations[name]
+
+  if enabled == nil or enabled == "auto" then
+    local success, _ = pcall(require, name:gsub("_", "-"))
+    return success
+  end
+
+  return enabled
+end
+
 return {
   get_layout_opts = get_layout_opts,
+  check_integration = check_integration
 }
