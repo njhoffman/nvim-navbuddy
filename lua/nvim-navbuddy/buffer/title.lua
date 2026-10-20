@@ -98,7 +98,7 @@ local function fill_title(buf, focus_node, config, opts)
 
   for _, hl in ipairs(hls) do
     if hl[2] + indent < winwidth and hl[3] < winwidth then
-      vim.api.nvim_buf_add_highlight(buf.bufnr, state.ns, hl[1], 0, indent + hl[2], indent + hl[3])
+      require("nvim-navbuddy.hl").add_highlight(buf.bufnr, state.ns, hl[1], 0, indent + hl[2], indent + hl[3])
     end
   end
 end

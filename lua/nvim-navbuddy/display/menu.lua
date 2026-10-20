@@ -247,7 +247,7 @@ function display:focus_range()
       local highlight, range = unpack(v)
 
       if range["start"].line == range["end"].line then
-        vim.api.nvim_buf_add_highlight(
+        require("nvim-navbuddy.hl").add_highlight(
           self.for_buf,
           state.ns,
           highlight,
@@ -256,7 +256,7 @@ function display:focus_range()
           range["end"].character
         )
       else
-        vim.api.nvim_buf_add_highlight(
+        require("nvim-navbuddy.hl").add_highlight(
           self.for_buf,
           state.ns,
           highlight,
@@ -264,7 +264,7 @@ function display:focus_range()
           range["start"].character,
           -1
         )
-        vim.api.nvim_buf_add_highlight(
+        require("nvim-navbuddy.hl").add_highlight(
           self.for_buf,
           state.ns,
           highlight,
@@ -273,7 +273,7 @@ function display:focus_range()
           range["end"].character
         )
         for i = range["start"].line, range["end"].line - 2, 1 do
-          vim.api.nvim_buf_add_highlight(self.for_buf, state.ns, highlight, i, 0, -1)
+          require("nvim-navbuddy.hl").add_highlight(self.for_buf, state.ns, highlight, i, 0, -1)
         end
       end
     end

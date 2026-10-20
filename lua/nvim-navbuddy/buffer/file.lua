@@ -29,10 +29,10 @@ local function fill_files(buf, active_bufnr, config)
         local file_hl = highlights.get_color_from_hl(hl_group)
         local hldark = { fg = highlights.darken(file_hl.foreground, 50) }
         vim.api.nvim_set_hl(0, hl_group .. 'Dim', hldark)
-        vim.api.nvim_buf_add_highlight(buf.bufnr, state.ns, hl_group .. 'Dim', i - 1, 0, -1)
+        require("nvim-navbuddy.hl").add_highlight(buf.bufnr, state.ns, hl_group .. 'Dim', i - 1, 0, -1)
       end
     elseif config.theme == 'hl-icon' then
-      vim.api.nvim_buf_add_highlight(buf.bufnr, state.ns, curbuf.display[1].hl, i - 1, 2, 4)
+      require("nvim-navbuddy.hl").add_highlight(buf.bufnr, state.ns, curbuf.display[1].hl, i - 1, 2, 4)
     end
   end
 

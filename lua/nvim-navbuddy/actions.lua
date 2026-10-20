@@ -805,9 +805,9 @@ function actions.help()
     vim.api.nvim_buf_set_lines(help_popup.bufnr, 0, -1, false, lines)
     vim.bo[help_popup.bufnr].modifiable = false
 
-    vim.api.nvim_buf_add_highlight(help_popup.bufnr, -1, "NavbuddyFunction", 0, 0, -1)
+    require("nvim-navbuddy.hl").add_highlight(help_popup.bufnr, -1, "NavbuddyFunction", 0, 0, -1)
     for i = 2, #lines do
-      vim.api.nvim_buf_add_highlight(help_popup.bufnr, -1, "NavbuddyKey", i - 1, 0, max_keybinding_len + 3)
+      require("nvim-navbuddy.hl").add_highlight(help_popup.bufnr, -1, "NavbuddyKey", i - 1, 0, max_keybinding_len + 3)
     end
   end
 

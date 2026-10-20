@@ -32,7 +32,7 @@ local function fill_lsp(buf, node, config)
     local hl_group = 'Navbuddy' .. sfx
     if config.theme == 'hl-line' then
       hl_group = buf.panel ~= 'mid' and hl_group .. 'Dim' or hl_group
-      vim.api.nvim_buf_add_highlight(buf.bufnr, state.ns, hl_group, i - 1, 0, -1)
+      require("nvim-navbuddy.hl").add_highlight(buf.bufnr, state.ns, hl_group, i - 1, 0, -1)
       -- u.add_hl(buf.bufnr, namespace, "Navbuddy" .. sfx .. 'Text', i - 1, 0, 1)
       -- u.add_hl(buf.bufnr, namespace, "Navbuddy" .. sfx, i - 1, 1, 4)
       -- u.add_hl(buf.bufnr, namespace, "Navbuddy" .. sfx .. 'Text', i - 1, 0, 1)
@@ -54,7 +54,7 @@ local function fill_lsp(buf, node, config)
         })
       end
     elseif config.theme == 'hl-icon' then
-      vim.api.nvim_buf_add_highlight(buf.bufnr, state.ns, 'Navbuddy' .. sfx, i - 1, 2, 4)
+      require("nvim-navbuddy.hl").add_highlight(buf.bufnr, state.ns, 'Navbuddy' .. sfx, i - 1, 2, 4)
     end
   end
   --  fill_lsp   …   if   if   vim.api.nvim_buf_set_extmark   virt_text
@@ -70,7 +70,7 @@ local function fill_lsp(buf, node, config)
   )
 
   if buf.panel ~= 'title' then
-    vim.api.nvim_buf_add_highlight(buf.bufnr, state.ns, 'NavbuddyCursorLine', cursor_pos[1] - 1, 0, -1)
+    require("nvim-navbuddy.hl").add_highlight(buf.bufnr, state.ns, 'NavbuddyCursorLine', cursor_pos[1] - 1, 0, -1)
     vim.api.nvim_buf_set_extmark(
       buf.bufnr,
       state.ns,
