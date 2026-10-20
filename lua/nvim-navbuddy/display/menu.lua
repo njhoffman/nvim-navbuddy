@@ -204,7 +204,7 @@ function display:new(obj)
     group = augroup,
     buffer = obj.mid.bufnr,
     callback = function()
-      vim.api.nvim_set_option("guicursor", obj.state.user_gui_cursor)
+      vim.api.nvim_set_option_value("guicursor", obj.state.user_gui_cursor, { scope = "global" })
     end,
   })
 
@@ -213,7 +213,7 @@ function display:new(obj)
     buffer = obj.mid.bufnr,
     callback = function()
       if obj.state.user_gui_cursor ~= "" then
-        vim.api.nvim_set_option("guicursor", "a:NavbuddyCursor")
+        vim.api.nvim_set_option_value("guicursor", "a:NavbuddyCursor", { scope = "global" })
       end
     end,
   })
