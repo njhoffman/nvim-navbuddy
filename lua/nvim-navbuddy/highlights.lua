@@ -7,6 +7,10 @@
 --- `NavbuddyScope` - highlight for scope of context in source buffer
 --- `NavbuddyFloatBorder` - Floatborder highlight
 --- `NavbuddyNormalFloat` - Float normal highlight
+--- `NavbuddyNormalFloatDim` - Dimmed float normal (used in buffer focus mode)
+--- `NavbuddyFloatBorderDim` - Dimmed float border (used in buffer focus mode)
+--- `NavbuddyTitleBorder` - Title bar border highlight
+--- `NavbuddyNormalTitle` - Title bar normal highlight
 ---
 --- The following highlights are are used to highlight elements in the navbuddy
 --- window according to their type. If you have "NavicIcons<type>" highlights
@@ -44,13 +48,21 @@
 
 local navic = require("nvim-navic.lib")
 local set_hl = vim.api.nvim_set_hl
-local get_hl = vim.api.nvim_get_hl_by_name
 local navic_num = navic.adapt_lsp_num_to_str
+
+local function hl_exists(name)
+  local hl = vim.api.nvim_get_hl(0, { name = name })
+  return next(hl) ~= nil
+end
 
 local function get_color_from_hl(name)
   local result = {}
-  for k, v in pairs(vim.api.nvim_get_hl_by_name(name, true)) do
-    result[k] = string.format("#%06x", v)
+  local hl = vim.api.nvim_get_hl(0, { name = name, link = false })
+  if hl.fg then
+    result.foreground = string.format("#%06x", hl.fg)
+  end
+  if hl.bg then
+    result.background = string.format("#%06x", hl.bg)
   end
   return result
 end
@@ -197,152 +209,85 @@ end
 ---@param config Navbuddy.config
 local function highlight_setup(config)
   for lsp_num = 1, 26 do
-    local navbuddy_ok, _ = pcall(
-      vim.api.nvim_get_hl_by_name,
-      "Navbuddy" .. navic.adapt_lsp_num_to_str(lsp_num),
-      false
-    )
-    local navic_ok, navic_hl =
-      pcall(
-        vim.api.nvim_get_hl_by_name,
-        "NavicIcons" .. navic.adapt_lsp_num_to_str(lsp_num),
-        true
-      )
+    local sfx = navic.adapt_lsp_num_to_str(lsp_num)
+    local navbuddy_name = "Navbuddy" .. sfx
+    local navic_name = "NavicIcons" .. sfx
 
-    if not navbuddy_ok and navic_ok then
-      navic_hl = navic_hl["foreground"]
-      vim.api.nvim_set_hl(0, "Navbuddy" .. navic.adapt_lsp_num_to_str(lsp_num), { fg = navic_hl })
+    if not hl_exists(navbuddy_name) then
+      local navic_hl = vim.api.nvim_get_hl(0, { name = navic_name, link = false })
+      if navic_hl.fg then
+        set_hl(0, navbuddy_name, { fg = navic_hl.fg })
+      end
     end
 
-    local ok, navbuddy_hl = pcall(
-      vim.api.nvim_get_hl_by_name,
-      "Navbuddy" .. navic.adapt_lsp_num_to_str(lsp_num),
-      true
-    )
-
-    if ok then
-      navbuddy_hl = navbuddy_hl["foreground"]
-
+    local navbuddy_hl = vim.api.nvim_get_hl(0, { name = navbuddy_name, link = false })
+    if navbuddy_hl.fg then
       local highlight
       if config.custom_hl_group ~= nil then
         highlight = { link = config.custom_hl_group }
       else
-        highlight = { bg = navbuddy_hl }
+        highlight = { bg = navbuddy_hl.fg }
       end
-      vim.api.nvim_set_hl(0, "NavbuddyCursorLine" .. navic.adapt_lsp_num_to_str(lsp_num), highlight)
+      set_hl(0, "NavbuddyCursorLine" .. sfx, highlight)
     else
-      local _, normal_hl = pcall(vim.api.nvim_get_hl_by_name, "Normal", true)
-      normal_hl = normal_hl["foreground"]
-      vim.api.nvim_set_hl(0, "Navbuddy" .. navic.adapt_lsp_num_to_str(lsp_num), { fg = normal_hl })
+      local normal_hl = vim.api.nvim_get_hl(0, { name = "Normal", link = false })
+      local fg = normal_hl.fg
+      set_hl(0, navbuddy_name, { fg = fg })
 
       local highlight
       if config.custom_hl_group ~= nil then
         highlight = { link = config.custom_hl_group }
       else
-        highlight = { bg = normal_hl }
+        highlight = { bg = fg }
       end
-      vim.api.nvim_set_hl(0, "NavbuddyCursorLine" .. navic.adapt_lsp_num_to_str(lsp_num), highlight)
+      set_hl(0, "NavbuddyCursorLine" .. sfx, highlight)
     end
-    -- local navbuddy_ok, _ = pcall(get_color_from_hl, "Navbuddy" .. navic_num(lsp_num))
-    -- local navic_ok, navic_hl = pcall(get_color_from_hl, "NavicIcons" .. navic_num(lsp_num))
-    -- if not navbuddy_ok and navic_ok then
-    --   navic_hl = navic_hl["foreground"]
-    --   local navic_hldim = darken(navic_hl, 30)
-    --   set_hl(0, "Navbuddy" .. navic_num(lsp_num), { fg = navic_hl })
-    --   if #navic_hldim == 7 then
-    --     set_hl(0, "Navbuddy" .. navic_num(lsp_num) .. "Dim", { fg = navic_hldim })
-    --   end
-    -- end
-
-    -- local ok, navbuddy_hl = pcall(vim.api.nvim_get_hl_by_name, "Navbuddy" .. navic.adapt_lsp_num_to_str(lsp_num), true)
-    -- if ok then
-    --   navbuddy_hl = navbuddy_hl["foreground"]
-    --   vim.api.nvim_set_hl(0, "NavbuddyCursorLine" .. navic.adapt_lsp_num_to_str(lsp_num), { bg = navbuddy_hl })
-    -- else
-    --   local _, normal_hl = pcall(vim.api.nvim_get_hl_by_name, "Normal", true)
-    --   normal_hl = normal_hl["foreground"]
-    --   vim.api.nvim_set_hl(0, "Navbuddy" .. navic.adapt_lsp_num_to_str(lsp_num), { fg = normal_hl })
-    --   vim.api.nvim_set_hl(0, "NavbuddyCursorLine" .. navic.adapt_lsp_num_to_str(lsp_num), { bg = normal_hl })
-    -- end
   end
 
-  -- local ok, _ = pcall(get_hl, "NavbuddyCursorLine", false)
-  -- if not ok then
-  --   set_hl(0, "NavbuddyCursorLine", { reverse = true, bold = true })
-  -- end
-
-  -- ok, _ = pcall(get_hl, "NavbuddyCursor", false)
-  -- if not ok then
-  --   set_hl(0, "NavbuddyCursor", { bg = "#000000", blend = 100 })
-  -- end
-
-  -- ok, _ = pcall(get_hl, "NavbuddyName", false)
-  -- if not ok then
-  --   set_hl(0, "NavbuddyName", { link = "IncSearch" })
-  -- end
-
-  -- ok, _ = pcall(get_hl, "NavbuddyScope", false)
-  -- if not ok then
-  --   set_hl(0, "NavbuddyScope", { link = "Visual" })
-  -- end
-
-  -- ok, _ = pcall(get_hl, "NavbuddyFloatBorder", false)
-  -- if not ok then
-  --   set_hl(0, "NavbuddyFloatBorder", { link = "FloatBorder" })
-  -- end
-
-  -- ok, _ = pcall(vim.api.nvim_get_hl_by_name, "NavbuddyNormalFloat", false)
-  -- if not ok then
-  --   vim.api.nvim_set_hl(0, "NavbuddyNormalFloat", { link = "NormalFloat" })
-  -- end
-
-  local ok, _ = pcall(vim.api.nvim_get_hl_by_name, "NavbuddyCursorLine", false)
-  if not ok then
+  if not hl_exists("NavbuddyCursorLine") then
     local highlight
     if config.custom_hl_group ~= nil then
       highlight = { link = config.custom_hl_group }
     else
       highlight = { reverse = true, bold = true }
     end
-    vim.api.nvim_set_hl(0, "NavbuddyCursorLine", highlight)
+    set_hl(0, "NavbuddyCursorLine", highlight)
   end
 
-  ok, _ = pcall(vim.api.nvim_get_hl_by_name, "NavbuddyCursor", false)
-  if not ok then
-    vim.api.nvim_set_hl(0, "NavbuddyCursor", {
-      bg = "#000000",
-      blend = 100,
-    })
+  if not hl_exists("NavbuddyCursor") then
+    set_hl(0, "NavbuddyCursor", { bg = "#000000", blend = 100 })
   end
 
-  ok, _ = pcall(vim.api.nvim_get_hl_by_name, "NavbuddyName", false)
-  if not ok then
-    vim.api.nvim_set_hl(0, "NavbuddyName", { link = "IncSearch" })
+  if not hl_exists("NavbuddyName") then
+    set_hl(0, "NavbuddyName", { link = "IncSearch" })
   end
 
-  ok, _ = pcall(vim.api.nvim_get_hl_by_name, "NavbuddyScope", false)
-  if not ok then
-    vim.api.nvim_set_hl(0, "NavbuddyScope", { link = "Visual" })
+  if not hl_exists("NavbuddyScope") then
+    set_hl(0, "NavbuddyScope", { link = "Visual" })
   end
 
-  ok, _ = pcall(vim.api.nvim_get_hl_by_name, "NavbuddyFloatBorder", false)
-  if not ok then
-    vim.api.nvim_set_hl(0, "NavbuddyFloatBorder", { link = "FloatBorder" })
+  if not hl_exists("NavbuddyFloatBorder") then
+    set_hl(0, "NavbuddyFloatBorder", { link = "FloatBorder" })
   end
 
-  ok, _ = pcall(vim.api.nvim_get_hl_by_name, "NavbuddyNormalFloat", false)
-  if not ok then
-    vim.api.nvim_set_hl(0, "NavbuddyNormalFloat", { link = "NormalFloat" })
+  if not hl_exists("NavbuddyNormalFloat") then
+    set_hl(0, "NavbuddyNormalFloat", { link = "NormalFloat" })
   end
 
-  ok, _ = pcall(get_hl, "NavbuddyTitleBorder", false)
-  if not ok then
+  if not hl_exists("NavbuddyTitleBorder") then
     set_hl(0, "NavbuddyTitleBorder", { link = "FloatBorder" })
   end
 
-  ok, _ = pcall(vim.api.nvim_get_hl_by_name, "NavbuddyNormalTitle", false)
-  if not ok then
-    vim.api.nvim_set_hl(0, "NavbuddyNormalTitle", { link = "NormalFloat" })
+  if not hl_exists("NavbuddyNormalTitle") then
+    set_hl(0, "NavbuddyNormalTitle", { link = "NormalFloat" })
+  end
+
+  if not hl_exists("NavbuddyNormalFloatDim") then
+    set_hl(0, "NavbuddyNormalFloatDim", { link = "Comment" })
+  end
+
+  if not hl_exists("NavbuddyFloatBorderDim") then
+    set_hl(0, "NavbuddyFloatBorderDim", { link = "Comment" })
   end
 end
 
@@ -351,4 +296,6 @@ return {
   get_color_from_hl = get_color_from_hl,
   darken = darken,
   setup = highlight_setup,
+  _clamp_color = clamp_color,
+  _to_rgb = to_rgb,
 }

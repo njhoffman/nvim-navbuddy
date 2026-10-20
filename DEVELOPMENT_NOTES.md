@@ -96,14 +96,19 @@ navic.request_symbol(bufnr, callback, client)
 **How it works:**
 1. Navigate to root with `0` key
 2. Left panel shows buffer list
-3. Use `j`/`k` to navigate buffers
-4. Press `h` to select buffer
-5. Navbuddy reloads with new buffer's LSP data
-6. Stay in Navbuddy, continue browsing
+3. Press `h` to enter **buffer focus mode** (dims mid/right panes, cursorline on left)
+4. Use `j`/`k` to navigate buffers -- each movement **live-switches** the active buffer
+5. Press `l` to exit buffer focus mode (undim, stay at root)
+6. Press `h` again to confirm buffer selection
+7. Navbuddy stays open, reloading LSP data for the selected buffer
+
+**State tracking:**
+- `state.in_buffer_list` -- true when at root level (buffer list visible)
+- `state.buffer_focused` -- true when left pane is focused (dim mode active)
 
 **Key Files:**
-- `display/menu.lua`: `select_buffer()`, `reload_buffer()`, `navigate_buffer_list()`
-- `actions.lua`: Enhanced `next_sibling()`, `previous_sibling()`, `parent()`
+- `display/menu.lua`: `enter_buffer_focus()`, `exit_buffer_focus()`, `select_buffer()`, `reload_buffer()`, `navigate_buffer_list()`
+- `actions.lua`: Enhanced `next_sibling()`, `previous_sibling()`, `parent()`, `children()`
 - `buffer/utils.lua`: `get_current_buffers()`
 
 ### Custom Features Active
@@ -159,6 +164,23 @@ config = {
 
 ## Testing
 
+### Automated Tests
+```bash
+make test              # Run all tests (clones deps on first run)
+make test-unit         # Unit tests only (highlights, border, utils, title)
+make test-integration  # Integration tests only (setup, actions, buffer focus)
+```
+
+Tests use plenary.nvim (busted-style `describe`/`it`). Dependencies are cloned into `deps/` (gitignored).
+
+**Test structure:**
+- `tests/unit/highlights_spec.lua` -- clamp_color, to_rgb, darken, get_border_chars
+- `tests/unit/border_spec.lua` -- border char generation for all style/section combos
+- `tests/unit/utils_spec.lua` -- get_size, apply_bounds, get_dimensions, check_integration
+- `tests/unit/title_spec.lua` -- node_chain_length calculation
+- `tests/integration/setup_spec.lua` -- config merging, mappings, section borders
+- `tests/integration/actions_spec.lua` -- navigation actions, buffer focus mode
+
 ### Basic Load Test
 ```bash
 nvim --headless -c "lua require('nvim-navbuddy')" -c "qa"
@@ -169,10 +191,11 @@ nvim --headless -c "lua require('nvim-navbuddy')" -c "qa"
 2. Attach LSP if needed
 3. Open Navbuddy: `:Navbuddy`
 4. Test navigation: `jklh0`
-5. Test buffer selection:
-   - Press `0` (go to root)
-   - Press `jjj` (navigate buffers)
-   - Press `h` (select buffer, should reload LSP)
+5. Test buffer focus mode:
+   - Press `0` (go to root, left pane shows buffers)
+   - Press `h` (enter buffer focus -- mid/right should dim)
+   - Press `j`/`k` (navigate AND live-switch buffers)
+   - Press `l` (exit buffer focus -- panes undim)
 6. Verify title bar updates
 7. Verify LSP hierarchy loads
 

@@ -16,15 +16,15 @@ local function fill_files(buf, active_bufnr, config)
     table.insert(lines, text)
   end
 
-  vim.api.nvim_buf_set_option(buf.bufnr, 'modifiable', true)
+  vim.bo[buf.bufnr].modifiable = true
   vim.api.nvim_buf_set_lines(buf.bufnr, 0, -1, false, lines)
-  vim.api.nvim_buf_set_option(buf.bufnr, 'modifiable', false)
+  vim.bo[buf.bufnr].modifiable = false
 
   for i, curbuf in ipairs(curbufs) do
     if config.theme == 'hl-line' then
       local hl_group = curbuf.display[1].hl
       if type(hl_group) ~= 'string' or #hl_group < 0 then
-        vim.dbglog('ERROR curbuf', curbuf)
+        if vim.dbglog then vim.dbglog('ERROR curbuf', curbuf) end
       else
         local file_hl = highlights.get_color_from_hl(hl_group)
         local hldark = { fg = highlights.darken(file_hl.foreground, 50) }

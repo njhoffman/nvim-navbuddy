@@ -20,9 +20,9 @@ local function fill_lsp(buf, node, config)
     table.insert(lines, text)
   end
 
-  vim.api.nvim_buf_set_option(buf.bufnr, 'modifiable', true)
+  vim.bo[buf.bufnr].modifiable = true
   vim.api.nvim_buf_set_lines(buf.bufnr, 0, -1, false, lines)
-  vim.api.nvim_buf_set_option(buf.bufnr, 'modifiable', false)
+  vim.bo[buf.bufnr].modifiable = false
   if cursor_pos[1] ~= node.index then
     cursor_pos[1] = node.index
   end

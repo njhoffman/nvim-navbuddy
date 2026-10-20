@@ -71,7 +71,7 @@ local calculate_size = function(size_config, col_sizes)
     size_config[size] = convert_percent(size_config[size], size, win_size)
   end
 
-  vim.dbglog('\nsize_config**', size_config, '\n**col_sizes', col_sizes)
+  if vim.dbglog then vim.dbglog('\nsize_config**', size_config, '\n**col_sizes', col_sizes) end
   return apply_bounds(size_config, col_sizes)
 end
 
@@ -104,7 +104,7 @@ local get_layout_opts = function(focus_node)
 
   local calculated_size = calculate_size(config.size, col_sizes)
 
-  vim.dbglog('calculated size', calculated_size)
+  if vim.dbglog then vim.dbglog('calculated size', calculated_size) end
   local opts = {
     size = {
       height = calculated_size.h,
@@ -112,7 +112,7 @@ local get_layout_opts = function(focus_node)
     },
     position = config.size.position,
   }
-  vim.dbglog('\ncontent**', col_sizes, '\n**parsed', calculated_size)
+  if vim.dbglog then vim.dbglog('\ncontent**', col_sizes, '\n**parsed', calculated_size) end
   return opts
 end
 
@@ -132,5 +132,8 @@ end
 
 return {
   get_layout_opts = get_layout_opts,
-  check_integration = check_integration
+  check_integration = check_integration,
+  _get_size = get_size,
+  _get_dimensions = get_dimensions,
+  _apply_bounds = apply_bounds,
 }

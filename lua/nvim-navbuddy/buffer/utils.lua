@@ -33,7 +33,7 @@ local get_current_buffers = function(active_bufnr)
       --   name_hl = "BuddyBuffersActive"
       -- end
 
-      if vim.api.nvim_buf_get_option(bufnr, "modified") then
+      if vim.bo[bufnr].modified then
         modified = " *"
       end
 
@@ -76,13 +76,13 @@ end
 local function clear_buffer(buf)
   vim.api.nvim_win_set_buf(buf.winid, buf.bufnr)
 
-  vim.api.nvim_win_set_option(buf.winid, "signcolumn", "no")
-  vim.api.nvim_win_set_option(buf.winid, "foldlevel", 100)
-  vim.api.nvim_win_set_option(buf.winid, "wrap", true)
+  vim.wo[buf.winid].signcolumn = "no"
+  vim.wo[buf.winid].foldlevel = 100
+  vim.wo[buf.winid].wrap = true
 
-  vim.api.nvim_buf_set_option(buf.bufnr, "modifiable", true)
+  vim.bo[buf.bufnr].modifiable = true
   vim.api.nvim_buf_set_lines(buf.bufnr, 0, -1, false, {})
-  vim.api.nvim_buf_set_option(buf.bufnr, "modifiable", false)
+  vim.bo[buf.bufnr].modifiable = false
   for _, extmark in ipairs(vim.api.nvim_buf_get_extmarks(buf.bufnr, state.ns, 0, -1, {})) do
     vim.api.nvim_buf_del_extmark(buf.bufnr, state.ns, extmark[1])
   end

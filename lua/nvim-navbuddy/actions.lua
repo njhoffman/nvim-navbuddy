@@ -36,12 +36,19 @@ end
 --- Move to next_sibling, below current node, in Navbuddy window.
 function actions.next_sibling()
   local callback = function(display)
+    if display.state.preview_focused then
+      display:exit_preview_focus()
+    end
+
     -- If we're at root and buffer list is shown, navigate the buffer list
     if display.focus_node.parent.is_root and display.state.in_buffer_list then
       for _ = 1, vim.v.count1 do
         if not display:navigate_buffer_list("down") then
           break
         end
+      end
+      if display.state.buffer_focused then
+        display:select_buffer()
       end
       return
     end
@@ -71,12 +78,19 @@ end
 --- When at root with buffer list shown, navigates up the buffer list.
 function actions.previous_sibling()
   local callback = function(display)
+    if display.state.preview_focused then
+      display:exit_preview_focus()
+    end
+
     -- If we're at root and buffer list is shown, navigate the buffer list
     if display.focus_node.parent.is_root and display.state.in_buffer_list then
       for _ = 1, vim.v.count1 do
         if not display:navigate_buffer_list("up") then
           break
         end
+      end
+      if display.state.buffer_focused then
+        display:select_buffer()
       end
       return
     end
@@ -103,13 +117,24 @@ function actions.previous_sibling()
 end
 
 --- Move to parent of current, left of current node, in Navbuddy window.
---- When at root, allows navigating the buffer list in the left panel.
+--- When in preview focus mode, exits preview focus and returns to normal.
+--- When at root, enters buffer focus mode (dims mid/right, enables cursorline on left).
+--- When already in buffer focus mode, confirms the buffer selection.
 function actions.parent()
   local callback = function(display)
-    -- If we're at root level, try to select a buffer from the left panel
+    if display.state.preview_focused then
+      display:exit_preview_focus()
+      return
+    end
+
+    -- If we're at root level, manage buffer focus mode
     if display.focus_node.parent.is_root then
       if display.state.in_buffer_list then
-        display:select_buffer()
+        if not display.state.buffer_focused then
+          display:enter_buffer_focus()
+        else
+          display:select_buffer()
+        end
       end
       return
     end
@@ -122,15 +147,26 @@ function actions.parent()
 
   return {
     callback = callback,
-    description = "Move left to parent level / select buffer",
+    description = "Move left to parent level / focus buffer list",
   }
 end
 
 --- Move to children of current, right of current node, in Navbuddy window.
+--- When in buffer focus mode, exits focus mode and stays at root.
+--- When on a leaf node, enters preview focus mode (dims left/mid, shows source in right).
 function actions.children()
   local callback = function(display)
+    if display.state.buffer_focused then
+      display:exit_buffer_focus()
+      return
+    end
+
+    if display.state.preview_focused then
+      return
+    end
+
     if display.focus_node.children == nil then
-      actions.select().callback(display)
+      display:enter_preview_focus()
       return
     end
 
@@ -765,9 +801,9 @@ function actions.help()
     )
     table.insert(lines, 2, string.rep("-", vim.api.nvim_win_get_width(help_popup.winid)))
 
-    vim.api.nvim_buf_set_option(help_popup.bufnr, "modifiable", true)
+    vim.bo[help_popup.bufnr].modifiable = true
     vim.api.nvim_buf_set_lines(help_popup.bufnr, 0, -1, false, lines)
-    vim.api.nvim_buf_set_option(help_popup.bufnr, "modifiable", false)
+    vim.bo[help_popup.bufnr].modifiable = false
 
     vim.api.nvim_buf_add_highlight(help_popup.bufnr, -1, "NavbuddyFunction", 0, 0, -1)
     for i = 2, #lines do

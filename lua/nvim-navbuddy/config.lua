@@ -186,7 +186,7 @@ local config = {
     --   },
     -- }),
 
-    ["g?"] = actions.help(),
+    ["?"] = actions.help(),
   },
   lsp = {
     auto_attach = false,

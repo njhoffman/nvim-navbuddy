@@ -130,6 +130,8 @@ function display:new(obj)
     source_buffer_scrolloff = nil,
     in_buffer_list = false, -- Track if we're navigating buffers in left panel
     buffer_list = nil,      -- Store current buffer list
+    buffer_focused = false, -- Track if left pane (buffer list) is focused/active
+    preview_focused = false, -- Track if right pane (leaf preview) is focused/active
     -- user_gui_cursor = nil,
   }
 
@@ -378,7 +380,7 @@ function display:show_preview()
   vim.api.nvim_set_option_value("foldlevel", 100, { win = self.right.winid })
   vim.api.nvim_set_option_value("wrap", false, { win = self.right.winid })
   if self.winblend then
-    vim.api.nvim_win_set_option(self.right.winid, "winblend", self.winblend)
+    vim.wo[self.right.winid].winblend = self.winblend
     -- else
     --   vim.api.nvim_win_set_option(
     --     self.right.winid,
@@ -442,6 +444,9 @@ function display:redraw()
     buffer.fill_lsp(self.left, node.parent, self.config)
     self.state.in_buffer_list = false
     self.state.buffer_list = nil
+    if self.state.buffer_focused then
+      self:exit_buffer_focus()
+    end
   end
   local winsize = {
     w = vim.api.nvim_win_get_width(self.title.winid),
@@ -543,6 +548,37 @@ function display:navigate_buffer_list(direction)
 
   vim.api.nvim_win_set_cursor(self.left.winid, { new_pos, 0 })
   return true
+end
+
+function display:enter_preview_focus()
+  self.state.preview_focused = true
+  self:show_preview()
+  local dim = "Normal:NavbuddyNormalFloatDim,FloatBorder:NavbuddyFloatBorderDim"
+  vim.wo[self.left.winid].winhighlight = dim
+  vim.wo[self.mid.winid].winhighlight = dim
+end
+
+function display:exit_preview_focus()
+  self.state.preview_focused = false
+  local normal_winhighlight = "Normal:NavbuddyNormalFloat,FloatBorder:NavbuddyFloatBorder"
+  vim.wo[self.left.winid].winhighlight = normal_winhighlight
+  vim.wo[self.mid.winid].winhighlight = normal_winhighlight
+  self:redraw()
+end
+
+function display:enter_buffer_focus()
+  self.state.buffer_focused = true
+  vim.wo[self.left.winid].cursorline = true
+  vim.wo[self.mid.winid].winhighlight = "Normal:NavbuddyNormalFloatDim,FloatBorder:NavbuddyFloatBorderDim"
+  vim.wo[self.right.winid].winhighlight = "Normal:NavbuddyNormalFloatDim,FloatBorder:NavbuddyFloatBorderDim"
+end
+
+function display:exit_buffer_focus()
+  self.state.buffer_focused = false
+  vim.wo[self.left.winid].cursorline = false
+  local normal_winhighlight = "Normal:NavbuddyNormalFloat,FloatBorder:NavbuddyFloatBorder"
+  vim.wo[self.mid.winid].winhighlight = normal_winhighlight
+  vim.wo[self.right.winid].winhighlight = normal_winhighlight
 end
 
 function display:close()

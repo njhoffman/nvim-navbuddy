@@ -66,7 +66,7 @@ function display:new(obj)
   }
 
   -- Set filetype
-  vim.api.nvim_buf_set_option(obj.title.bufnr, "filetype", "Navbuddy")
+  vim.bo[obj.title.bufnr].filetype = "Navbuddy"
 
   local augroup = vim.api.nvim_create_augroup("Navbuddy", { clear = false })
   vim.api.nvim_clear_autocmds({ buffer = obj.title.bufnr })
@@ -79,10 +79,10 @@ function display:new(obj)
       local curr_node = context_data[#context_data]
       if self.focus_node ~= curr_node then
         obj.focus_node = curr_node
-        vim.dbglog("redrawing", curr_node.is_root, vim.tbl_keys(curr_node))
+        if vim.dbglog then vim.dbglog("redrawing", curr_node.is_root, vim.tbl_keys(curr_node)) end
         obj:redraw()
       else
-        vim.dbglog("same node", obj.focus_node.name, curr_node.name)
+        if vim.dbglog then vim.dbglog("same node", obj.focus_node.name, curr_node.name) end
       end
       --
       -- obj:clear_highlights()

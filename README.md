@@ -187,8 +187,8 @@ navbuddy.setup {
         ["j"] = actions.next_sibling(),     -- down
         ["k"] = actions.previous_sibling(), -- up
 
-        ["h"] = actions.parent(),           -- Move to left panel
-        ["l"] = actions.children(),         -- Move to right panel
+        ["h"] = actions.parent(),           -- Move to left panel / focus buffer list
+        ["l"] = actions.children(),         -- Move to right panel / exit buffer focus
         ["0"] = actions.root(),             -- Move to first panel
 
         ["v"] = actions.visual_name(),      -- Visual selection of name
@@ -257,9 +257,38 @@ navbuddy.setup {
 :Navbuddy
 ```
 
+Open at the root level with `:Navbuddy root`.
+
 And alternatively lua function `open` can also be used to open navbuddy.
 
+```lua
+require("nvim-navbuddy").open()
+require("nvim-navbuddy").open({ root = true })
 ```
-:lua require("nvim-navbuddy").open()
+
+### Buffer Focus Mode
+
+When navigating to the root level (press `0`), the left panel shows open buffers.
+Pressing `h` at root enters **buffer focus mode**:
+
+- Mid and right panels are dimmed
+- `j`/`k` navigates the buffer list and **live-switches** the active buffer
+- `l` exits buffer focus mode and returns to normal navigation
+- `h` again confirms the selection
+
+### Preview Focus Mode
+
+When pressing `l` on a leaf node (no children), the source code preview is shown
+in the right panel and the left and mid panels are dimmed:
+
+- `h` exits preview focus and returns to normal navigation
+- `j`/`k` exits preview focus and moves to the next/previous sibling
+
+### Running Tests
+
+```bash
+make test              # Run all tests (clones deps on first run)
+make test-unit         # Unit tests only
+make test-integration  # Integration tests only
 ```
 

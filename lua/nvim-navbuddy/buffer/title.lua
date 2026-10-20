@@ -92,9 +92,9 @@ local function fill_title(buf, focus_node, config, opts)
   node_path = string.rep('', indent, ' ') .. node_path
   -- vim.dbglog('3', indent, node_path, hls)
 
-  vim.api.nvim_buf_set_option(buf.bufnr, 'modifiable', true)
+  vim.bo[buf.bufnr].modifiable = true
   vim.api.nvim_buf_set_lines(buf.bufnr, 0, -1, false, { node_path })
-  vim.api.nvim_buf_set_option(buf.bufnr, 'modifiable', false)
+  vim.bo[buf.bufnr].modifiable = false
 
   for _, hl in ipairs(hls) do
     if hl[2] + indent < winwidth and hl[3] < winwidth then
@@ -103,4 +103,7 @@ local function fill_title(buf, focus_node, config, opts)
   end
 end
 
-return fill_title
+return {
+  fill = fill_title,
+  _node_chain_length = node_chain_length,
+}
