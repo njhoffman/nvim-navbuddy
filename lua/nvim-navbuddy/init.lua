@@ -237,22 +237,6 @@ end
 
 local navbuddy = {}
 
-local function setup_commands()
-  local get_complete = function()
-    return { "root" }
-  end
-
-  vim.api.nvim_create_user_command("Navbuddy", function(cmd)
-    ---@type Navbuddy.openOpts
-    local opts = {}
-    if cmd.fargs[1] == "root" then
-      opts.root = true
-    end
-
-    navbuddy.open(opts)
-  end, { nargs = "?", complete = get_complete, desc = "Navbuddy" })
-end
-
 ---@text API
 ---
 --- |nvim-navbuddy| provides the following functions for the user.
@@ -323,13 +307,15 @@ function navbuddy.setup(user_config)
     end
   end
 
+  -- Separate from the "navbuddy" group, which holds each attached buffer's autocmds
+  local auto_attach_augroup = vim.api.nvim_create_augroup("navbuddy_auto_attach", { clear = true })
+
   if config.lsp.auto_attach == true then
-    local navbuddy_augroup = vim.api.nvim_create_augroup("navbuddy", { clear = false })
-    vim.api.nvim_clear_autocmds({ group = navbuddy_augroup })
     vim.api.nvim_create_autocmd("LspAttach", {
+      group = auto_attach_augroup,
       callback = function(args)
         local bufnr = args.buf
-        if args.data == nil and args.data.client_id == nil then
+        if args.data == nil or args.data.client_id == nil then
           return
         end
         local client = vim.lsp.get_client_by_id(args.data.client_id)
@@ -355,8 +341,6 @@ function navbuddy.setup(user_config)
       end
     end
   end
-
-  setup_commands()
 end
 
 --- Opens Navbuddy for the given buffer or options.

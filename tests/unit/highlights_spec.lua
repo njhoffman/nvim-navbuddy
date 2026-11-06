@@ -68,9 +68,26 @@ describe("highlights", function()
       assert.equals("#7f7f7f", result)
     end)
 
-    it("returns near-black at 100 percent", function()
-      local result = hl.darken("#FFFFFF", 100)
-      assert.equals("#000", result)
+    it("returns black at 100 percent", function()
+      assert.equals("#000000", hl.darken("#FFFFFF", 100))
+    end)
+
+    it("pads each channel to two digits", function()
+      assert.equals("#100520", hl.darken("#100520", 0))
+      assert.equals("#0a0b0c", hl.darken("#0a0b0c", 0))
+      assert.equals("#050506", hl.darken("#0a0b0c", 50))
+    end)
+
+    it("returns nil for a missing color", function()
+      assert.is_nil(hl.darken(nil, 50))
+    end)
+
+    it("returns a color it cannot parse unchanged", function()
+      assert.equals("#zzzzzz", hl.darken("#zzzzzz", 50))
+    end)
+
+    it("clamps percentages above 100", function()
+      assert.equals("#000000", hl.darken("#FFFFFF", 150))
     end)
   end)
 

@@ -52,15 +52,15 @@ Reviewed: 2026-11-05
   Fix: give help its own size, large enough for the mapping count and centered.
 - [ ] **`wrap` in a section's `win_options` is overwritten.** (p3) [bug] `clear_buffer` sets `wrap = true` on each redraw (`buffer/utils.lua:81`), and also `signcolumn` and `foldlevel`.
   Fix: stop setting these on every fill, and restore them only after a preview.
-- [ ] **`:Navbuddy` does not exist until `setup()` runs.** (p2) [bug] The README's `attach`-only flow ends in an unknown command.
+- [x] **`:Navbuddy` does not exist until `setup()` runs.** (p2) [bug] The README's `attach`-only flow ends in an unknown command.
   Reproduced: `exists(":Navbuddy")` is 0 after `require`, and the repo has no `plugin/` directory.
   Fix: define the command from `plugin/navbuddy.lua`, with lazy requires so startup stays cheap.
-- [ ] **The LspAttach guard and autocmd are wrong.** (p2) [bug] `args.data == nil and args.data.client_id == nil` errors on the case it means to catch, and should use `or` (`init.lua:324`).
+- [x] **The LspAttach guard and autocmd are wrong.** (p2) [bug] `args.data == nil and args.data.client_id == nil` errors on the case it means to catch, and should use `or` (`init.lua:324`).
   The autocmd at `:321` has no `group`, so `nvim_clear_autocmds` misses it and every `setup()` call adds another.
 - [x] **LspDetach can remove the wrong client.** (p2) [bug] The callback closes over the most recently attached `client` and ignores `args.data.client_id` (`init.lua:417-433`).
   Each `attach` also clears the previous buffer autocmds. With two clients, detaching one removes the other from the list.
   Fix: read the client id from the event. Depends on the `is_stopped` fix to be observable.
-- [ ] **`darken()` produces wrong colors.** (p2) [bug] Channels are formatted with `%0x`, which does not pad.
+- [x] **`darken()` produces wrong colors.** (p2) [bug] Channels are formatted with `%0x`, which does not pad.
   Reproduced: `darken("#100520", 0)` returns `#010520` and `darken("#0a0b0c", 0)` returns `#abc` (`highlights.lua:85-88`).
   `file.lua:30` also passes `file_hl.foreground` unchecked, and `darken(nil, 50)` errors when an icon highlight has no fg.
   Fix: `string.format("#%02x%02x%02x", r, g, b)` and a nil guard, with spec cases for both.

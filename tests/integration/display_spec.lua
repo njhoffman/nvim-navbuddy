@@ -485,6 +485,19 @@ describe("display", function()
       assert.equals("second", display.focus_node.name)
     end)
 
+    it("lists a file whose icon highlight has no foreground", function()
+      vim.api.nvim_set_hl(0, "NavbuddySpecNoFg", { bg = "#808080" })
+      package.loaded["nvim-web-devicons"] = {
+        get_icon = function()
+          return "x", "NavbuddySpecNoFg"
+        end,
+      }
+
+      local display = open(root.children[1])
+
+      assert_has(panel_text(display.left), "navbuddy_spec_source.lua")
+    end)
+
     it("lists a file type that has no icon", function()
       package.loaded["nvim-web-devicons"] = {
         get_icon = function()

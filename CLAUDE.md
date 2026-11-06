@@ -43,7 +43,7 @@ Tests use plenary.nvim (busted-style). Test deps are cloned into `deps/` (gitign
 ### Entry Point & Public API (`init.lua`)
 - `navbuddy.setup(config)` -- merge user config with defaults
 - `navbuddy.attach(client, bufnr)` -- attach to LSP client
-- `navbuddy.open(opts?)` -- open the navigator; also exposed as `:Navbuddy` and `:Navbuddy root`
+- `navbuddy.open(opts?)` -- open the navigator; also exposed as `:Navbuddy` and `:Navbuddy root`, defined in `plugin/navbuddy.lua` so it exists without `setup()`
 - LSP symbols come from `navic.request_symbol()`, which calls back with a node tree
 
 ### Display Dispatcher Pattern

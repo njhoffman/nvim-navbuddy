@@ -76,18 +76,20 @@ local function to_rgb(color)
 end
 
 local function darken(color, percent)
-  local r, g, b = to_rgb(color)
-  if type(r) ~= "nil" and type(g) ~= "nil" and type(b) ~= "nil" then
-    r = clamp_color(math.floor(tonumber(r * (100 - percent) / 100) or r))
-    g = clamp_color(math.floor(tonumber(g * (100 - percent) / 100) or g))
-    b = clamp_color(math.floor(tonumber(b * (100 - percent) / 100) or b))
-  end
-  local new_color = "#" .. string.format("%0x", r) .. string.format("%0x", g) .. string.format("%0x", b)
-  if #new_color == 6 then
-    new_color = "#0" .. string.format("%0x", r) .. string.format("%0x", g) .. string.format("%0x", b)
+  if type(color) ~= "string" then
+    return color
   end
 
-  return new_color
+  local r, g, b = to_rgb(color)
+  if not (r and g and b) then
+    return color
+  end
+
+  local function scale(channel)
+    return clamp_color(math.floor(channel * (100 - percent) / 100))
+  end
+
+  return string.format("#%02x%02x%02x", scale(r), scale(g), scale(b))
 end
 
 ---@private

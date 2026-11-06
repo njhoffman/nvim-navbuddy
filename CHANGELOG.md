@@ -6,6 +6,15 @@ All notable changes to this fork are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-11-05
+
+### Fixed
+
+- `:Navbuddy` is available without calling `setup()`, so setups that only call `attach` work. The plugin itself still loads on first use.
+- `lsp.auto_attach` no longer errors on `LspAttach` events without client data, and calling `setup()` repeatedly no longer adds autocmds or removes the handling for detached servers and deleted buffers.
+- Setting `lsp.auto_attach = false` in a later `setup()` call now turns it off.
+- Dimmed colors in the buffer list are correct for channels below `0x10`, and an icon highlight with no foreground no longer causes an error.
+
 ## [0.2.1] - 2026-11-05
 
 ### Fixed

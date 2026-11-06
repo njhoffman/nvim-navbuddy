@@ -27,9 +27,12 @@ local function fill_files(buf, active_bufnr, config)
         if vim.dbglog then vim.dbglog('ERROR curbuf', curbuf) end
       else
         local file_hl = highlights.get_color_from_hl(hl_group)
-        local hldark = { fg = highlights.darken(file_hl.foreground, 50) }
-        vim.api.nvim_set_hl(0, hl_group .. 'Dim', hldark)
-        require("nvim-navbuddy.hl").add_highlight(buf.bufnr, state.ns, hl_group .. 'Dim', i - 1, 0, -1)
+        if file_hl.foreground then
+          local hldark = { fg = highlights.darken(file_hl.foreground, 50) }
+          vim.api.nvim_set_hl(0, hl_group .. 'Dim', hldark)
+          hl_group = hl_group .. 'Dim'
+        end
+        require("nvim-navbuddy.hl").add_highlight(buf.bufnr, state.ns, hl_group, i - 1, 0, -1)
       end
     elseif config.theme == 'hl-icon' then
       require("nvim-navbuddy.hl").add_highlight(buf.bufnr, state.ns, curbuf.display[1].hl, i - 1, 2, 4)

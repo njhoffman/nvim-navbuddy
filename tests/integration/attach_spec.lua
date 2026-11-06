@@ -114,6 +114,7 @@ describe("attached clients", function()
     end, 5)
     vim.cmd("silent! %bwipeout!")
     package.loaded["nvim-web-devicons"] = nil
+    pcall(vim.api.nvim_del_augroup_by_name, "navbuddy_auto_attach")
   end)
 
   it("keeps the first client when a second attaches", function()
@@ -169,6 +170,77 @@ describe("attached clients", function()
     navbuddy.open()
 
     assert.equals("first_lsp", wait_for_display().lsp_name)
+  end)
+
+  it("keeps detach handling after a second setup", function()
+    local first = start_client("first_lsp")
+    local second = start_client("second_lsp")
+    navbuddy.attach(first, source_buf)
+    navbuddy.attach(second, source_buf)
+
+    navbuddy.setup({ lsp = { auto_attach = true } })
+    vim.api.nvim_exec_autocmds("LspDetach", { buffer = source_buf, data = { client_id = first.id } })
+    navbuddy.open()
+
+    assert.equals("second_lsp", wait_for_display().lsp_name)
+  end)
+
+  describe("auto_attach", function()
+    local function lsp_attach_autocmds()
+      local ok, autocmds = pcall(vim.api.nvim_get_autocmds, { group = "navbuddy_auto_attach", event = "LspAttach" })
+      return ok and autocmds or {}
+    end
+
+    it("attaches a client that starts after setup", function()
+      navbuddy.setup({ lsp = { auto_attach = true } })
+
+      start_client("auto_lsp")
+      navbuddy.open()
+
+      assert.equals("auto_lsp", wait_for_display().lsp_name)
+    end)
+
+    it("attaches clients already running at setup", function()
+      start_client("early_lsp")
+
+      navbuddy.setup({ lsp = { auto_attach = true } })
+      navbuddy.open()
+
+      assert.equals("early_lsp", wait_for_display().lsp_name)
+    end)
+
+    it("adds one autocmd however many times setup runs", function()
+      navbuddy.setup({ lsp = { auto_attach = true } })
+      navbuddy.setup({ lsp = { auto_attach = true } })
+      navbuddy.setup({ lsp = { auto_attach = true } })
+
+      assert.equals(1, #lsp_attach_autocmds())
+    end)
+
+    it("removes the autocmd when setup turns it off", function()
+      navbuddy.setup({ lsp = { auto_attach = true } })
+      navbuddy.setup({ lsp = { auto_attach = false } })
+
+      assert.equals(0, #lsp_attach_autocmds())
+    end)
+
+    it("ignores LspAttach without client data", function()
+      navbuddy.setup({ lsp = { auto_attach = true } })
+
+      vim.v.errmsg = ""
+      vim.api.nvim_exec_autocmds("LspAttach", { buffer = source_buf })
+
+      assert.equals("", vim.v.errmsg)
+    end)
+
+    it("ignores LspAttach for an unknown client", function()
+      navbuddy.setup({ lsp = { auto_attach = true } })
+
+      vim.v.errmsg = ""
+      vim.api.nvim_exec_autocmds("LspAttach", { buffer = source_buf, data = { client_id = 99999 } })
+
+      assert.equals("", vim.v.errmsg)
+    end)
   end)
 
   it("reports no servers once the last client detaches", function()
