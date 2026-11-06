@@ -1,5 +1,5 @@
 local function get_border(style, section)
-  if style ~= 'single' and style ~= 'rounded' and style ~= 'double' and style ~= 'solid' then
+  if style ~= "single" and style ~= "rounded" and style ~= "double" and style ~= "solid" then
     return style
   end
 

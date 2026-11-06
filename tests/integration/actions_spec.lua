@@ -20,21 +20,51 @@ local function make_display(focus_node, opts)
       preview_focused = opts.preview_focused or false,
     },
     config = require("nvim-navbuddy.config"),
-    redrawn = function() return redrawn end,
-    redraw = function(self) redrawn = true end,
+    redrawn = function()
+      return redrawn
+    end,
+    redraw = function(self)
+      redrawn = true
+    end,
     close = function() end,
-    navigate_buffer_list = function() return opts.can_navigate or false end,
-    select_buffer = function(self) buffer_selected = true end,
-    enter_buffer_focus = function(self) self.state.buffer_focused = true; buffer_focus_entered = true end,
-    exit_buffer_focus = function(self) self.state.buffer_focused = false; buffer_focus_exited = true end,
-    enter_preview_focus = function(self) self.state.preview_focused = true; preview_focus_entered = true end,
-    exit_preview_focus = function(self) self.state.preview_focused = false; preview_focus_exited = true end,
+    navigate_buffer_list = function()
+      return opts.can_navigate or false
+    end,
+    select_buffer = function(self)
+      buffer_selected = true
+    end,
+    enter_buffer_focus = function(self)
+      self.state.buffer_focused = true
+      buffer_focus_entered = true
+    end,
+    exit_buffer_focus = function(self)
+      self.state.buffer_focused = false
+      buffer_focus_exited = true
+    end,
+    enter_preview_focus = function(self)
+      self.state.preview_focused = true
+      preview_focus_entered = true
+    end,
+    exit_preview_focus = function(self)
+      self.state.preview_focused = false
+      preview_focus_exited = true
+    end,
     _test = {
-      was_buffer_selected = function() return buffer_selected end,
-      was_focus_entered = function() return buffer_focus_entered end,
-      was_focus_exited = function() return buffer_focus_exited end,
-      was_preview_entered = function() return preview_focus_entered end,
-      was_preview_exited = function() return preview_focus_exited end,
+      was_buffer_selected = function()
+        return buffer_selected
+      end,
+      was_focus_entered = function()
+        return buffer_focus_entered
+      end,
+      was_focus_exited = function()
+        return buffer_focus_exited
+      end,
+      was_preview_entered = function()
+        return preview_focus_entered
+      end,
+      was_preview_exited = function()
+        return preview_focus_exited
+      end,
     },
   }
 end
@@ -91,7 +121,7 @@ describe("actions", function()
       local root = mock.make_tree({
         { name = "outer", children = {
           { name = "inner" },
-        }},
+        } },
       })
       local inner = root.children[1].children[1]
       local display = make_display(inner)
@@ -116,7 +146,7 @@ describe("actions", function()
         { name = "parent_fn", children = {
           { name = "child_a" },
           { name = "child_b" },
-        }},
+        } },
       })
       local display = make_display(root.children[1])
       actions.children().callback(display)
@@ -128,7 +158,7 @@ describe("actions", function()
         { name = "parent_fn", children = {
           { name = "child_a" },
           { name = "child_b" },
-        }},
+        } },
       })
       root.children[1].memory = 2
       local display = make_display(root.children[1])
@@ -235,7 +265,7 @@ describe("actions", function()
       local root = mock.make_tree({
         { name = "outer", children = {
           { name = "leaf" },
-        }},
+        } },
       })
       local inner = root.children[1].children[1]
       local display = make_display(inner, { preview_focused = true })
@@ -270,11 +300,14 @@ describe("actions", function()
   describe("root", function()
     it("navigates to top level from nested node", function()
       local root = mock.make_tree({
-        { name = "level1", children = {
-          { name = "level2", children = {
-            { name = "level3" },
-          }},
-        }},
+        {
+          name = "level1",
+          children = {
+            { name = "level2", children = {
+              { name = "level3" },
+            } },
+          },
+        },
       })
       local deep = root.children[1].children[1].children[1]
       local display = make_display(deep)

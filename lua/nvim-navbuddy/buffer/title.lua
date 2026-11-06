@@ -1,6 +1,6 @@
-local navic = require('nvim-navic.lib')
-local buf_utils = require('nvim-navbuddy.buffer.utils')
-local state = require('nvim-navbuddy.state')
+local navic = require("nvim-navic.lib")
+local buf_utils = require("nvim-navbuddy.buffer.utils")
+local state = require("nvim-navbuddy.state")
 
 local function node_chain_length(node_chain, separator)
   local path_length = 0
@@ -22,13 +22,13 @@ local function fill_title(buf, focus_node, config, opts)
   -- local sfx = navic.adapt_lsp_num_to_str(focus_node.kind)
   -- local hls = { { "Navbuddy" .. sfx, 1, 3 } }
   buf_utils.clear_buffer(buf)
-  opts = opts or { align = 'left', separator = '  ' }
+  opts = opts or { align = "left", separator = "  " }
   local node_chain = { focus_node }
   local parent_node = focus_node.parent
 
   local winwidth = opts.winsize.w or vim.api.nvim_win_get_width(buf)
 
-  while type(parent_node) ~= 'nil' and type(parent_node.name) ~= 'nil' do
+  while type(parent_node) ~= "nil" and type(parent_node.name) ~= "nil" do
     table.insert(node_chain, parent_node)
     parent_node = parent_node.parent
   end
@@ -58,12 +58,12 @@ local function fill_title(buf, focus_node, config, opts)
   local remaining = #node_names
   while chain_length >= winwidth - 3 and remaining > 0 do
     chain_length = chain_length - display_width(node_names[truncate_i]) + 1
-    node_names[truncate_i] = '…'
+    node_names[truncate_i] = "…"
     truncate_i = truncate_i == #node_names and 1 or (truncate_i + 1)
     remaining = remaining - 1
   end
 
-  local node_path = ''
+  local node_path = ""
   local hls = {}
   for i, node in ipairs(node_chain) do
     if not node.is_root then
@@ -72,16 +72,16 @@ local function fill_title(buf, focus_node, config, opts)
       if i > 1 then
         node_path = node_path .. opts.separator
       end
-      table.insert(hls, { 'Navbuddy' .. sfx, #node_path, #node_path + #icon })
+      table.insert(hls, { "Navbuddy" .. sfx, #node_path, #node_path + #icon })
       node_path = node_path .. icon .. node_names[i]
     end
   end
 
   local indent = 0
-  if opts.align == 'center' then
+  if opts.align == "center" then
     indent = math.max(math.floor((winwidth - display_width(node_path)) / 2), 0)
   end
-  node_path = string.rep(' ', indent) .. node_path
+  node_path = string.rep(" ", indent) .. node_path
 
   vim.bo[buf.bufnr].modifiable = true
   vim.api.nvim_buf_set_lines(buf.bufnr, 0, -1, false, { node_path })

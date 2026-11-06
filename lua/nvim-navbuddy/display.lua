@@ -20,7 +20,7 @@ setmetatable(display, {
   __index = menu,
   __call = function(_, opts)
     return menu:new(opts)
-  end
+  end,
 })
 
 return display

@@ -1,6 +1,6 @@
-local state = require('nvim-navbuddy.state')
-local buf_utils = require('nvim-navbuddy.buffer.utils')
-local highlights = require('nvim-navbuddy.highlights')
+local state = require("nvim-navbuddy.state")
+local buf_utils = require("nvim-navbuddy.buffer.utils")
+local highlights = require("nvim-navbuddy.highlights")
 
 local function fill_files(buf, active_bufnr, config)
   local lines = {}
@@ -8,7 +8,7 @@ local function fill_files(buf, active_bufnr, config)
   local active_buf = { idx = nil, hl = nil }
   local curbufs = buf_utils.get_current_buffers(active_bufnr)
   for i, curbuf in ipairs(curbufs) do
-    local text = ' ' .. (curbuf.display[1].text or '') .. ' ' .. (curbuf.display[2].text or '')
+    local text = " " .. (curbuf.display[1].text or "") .. " " .. (curbuf.display[2].text or "")
     if curbuf.data.current then
       active_buf.idx = i
       active_buf.hl = curbuf.display[1].hl
@@ -21,27 +21,29 @@ local function fill_files(buf, active_bufnr, config)
   vim.bo[buf.bufnr].modifiable = false
 
   for i, curbuf in ipairs(curbufs) do
-    if config.theme == 'hl-line' then
+    if config.theme == "hl-line" then
       local hl_group = curbuf.display[1].hl
-      if type(hl_group) ~= 'string' or #hl_group < 0 then
-        if vim.dbglog then vim.dbglog('ERROR curbuf', curbuf) end
+      if type(hl_group) ~= "string" or #hl_group < 0 then
+        if vim.dbglog then
+          vim.dbglog("ERROR curbuf", curbuf)
+        end
       else
         local file_hl = highlights.get_color_from_hl(hl_group)
         if file_hl.foreground then
           local hldark = { fg = highlights.darken(file_hl.foreground, 50) }
-          vim.api.nvim_set_hl(0, hl_group .. 'Dim', hldark)
-          hl_group = hl_group .. 'Dim'
+          vim.api.nvim_set_hl(0, hl_group .. "Dim", hldark)
+          hl_group = hl_group .. "Dim"
         end
         require("nvim-navbuddy.hl").add_highlight(buf.bufnr, state.ns, hl_group, i - 1, 0, -1)
       end
-    elseif config.theme == 'hl-icon' then
+    elseif config.theme == "hl-icon" then
       require("nvim-navbuddy.hl").add_highlight(
         buf.bufnr,
         state.ns,
         curbuf.display[1].hl,
         i - 1,
         1,
-        1 + #(curbuf.display[1].text or '')
+        1 + #(curbuf.display[1].text or "")
       )
     end
   end
@@ -55,7 +57,7 @@ local function fill_files(buf, active_bufnr, config)
     vim.api.nvim_buf_set_extmark(buf.bufnr, state.ns, active_buf.idx - 1, 0, {
       end_row = active_buf.idx,
       hl_eol = true,
-      hl_group = 'NavbuddyCursorLine',
+      hl_group = "NavbuddyCursorLine",
     })
     vim.api.nvim_win_set_cursor(buf.winid, { active_buf.idx, 0 })
   end

@@ -102,7 +102,7 @@ function display:new(obj)
     closed = false,
     source_buffer_scrolloff = nil,
     in_buffer_list = false, -- Track if we're navigating buffers in left panel
-    buffer_list = nil,      -- Store current buffer list
+    buffer_list = nil, -- Store current buffer list
     buffer_focused = false, -- Track if left pane (buffer list) is focused/active
     preview_focused = false, -- Track if right pane (leaf preview) is focused/active
     -- user_gui_cursor = nil,
@@ -404,7 +404,7 @@ function display:redraw()
 
   if node.parent.is_root then
     -- buffer.clear(self.left)
-    local buf_utils = require('nvim-navbuddy.buffer.utils')
+    local buf_utils = require("nvim-navbuddy.buffer.utils")
     self.state.buffer_list = buf_utils.get_current_buffers(self.for_buf)
     buffer.fill_files(self.left, self.for_buf, self.config)
     self.state.in_buffer_list = true

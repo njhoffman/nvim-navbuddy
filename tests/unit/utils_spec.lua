@@ -85,10 +85,13 @@ describe("utils", function()
     it("calculates right dimensions from grandchildren", function()
       -- get_dimensions(node) shows node.children as mid, node.children[1].children as right
       local root = mock.make_tree({
-        { name = "child_a", children = {
-          { name = "grandchild_1" },
-          { name = "grandchild_2" },
-        }},
+        {
+          name = "child_a",
+          children = {
+            { name = "grandchild_1" },
+            { name = "grandchild_2" },
+          },
+        },
         { name = "child_b" },
       })
       local dims = utils._get_dimensions(root)

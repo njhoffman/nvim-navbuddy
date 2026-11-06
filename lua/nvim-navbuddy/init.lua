@@ -25,7 +25,6 @@
 ---@tag navbuddy-requirements
 ---@toc_entry Requirements
 
-
 ---@text INSTALLATION
 --- >lua
 ---   -- lazy.nvim
