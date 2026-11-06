@@ -216,8 +216,8 @@ nvim --headless -c "lua require('nvim-navbuddy')" -c "qa"
 function actions.my_action()
   local callback = function(display)
     -- Check if at root with buffers
-    if display.focus_node.parent.is_root and display.state.in_buffer_list then
-      -- Buffer mode behavior
+    if display.state.buffer_focused then
+      -- Buffer focus mode behavior
     else
       -- Normal LSP navigation behavior
     end

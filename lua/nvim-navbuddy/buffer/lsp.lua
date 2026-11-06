@@ -2,7 +2,6 @@ local navic = require('nvim-navic.lib')
 local buf_utils = require('nvim-navbuddy.buffer.utils')
 local state = require('nvim-navbuddy.state')
 
--- TODO: figure out why right section window borer not being parsed
 local function fill_lsp(buf, node, config)
   local cursor_pos = vim.api.nvim_win_get_cursor(buf.winid)
   buf_utils.clear_buffer(buf)

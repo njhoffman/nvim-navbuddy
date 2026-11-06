@@ -34,22 +34,21 @@ function actions.close()
 end
 
 --- Move to next_sibling, below current node, in Navbuddy window.
+--- In buffer focus mode, navigates down the buffer list and live-switches.
 function actions.next_sibling()
   local callback = function(display)
     if display.state.preview_focused then
       display:exit_preview_focus()
     end
 
-    -- If we're at root and buffer list is shown, navigate the buffer list
-    if display.focus_node.parent.is_root and display.state.in_buffer_list then
+    -- In buffer focus mode, navigate the buffer list and live-switch
+    if display.state.buffer_focused then
       for _ = 1, vim.v.count1 do
         if not display:navigate_buffer_list("down") then
           break
         end
       end
-      if display.state.buffer_focused then
-        display:select_buffer()
-      end
+      display:select_buffer()
       return
     end
 
@@ -75,23 +74,21 @@ function actions.next_sibling()
 end
 
 --- Move to previous_sibling, above current node, in Navbuddy window.
---- When at root with buffer list shown, navigates up the buffer list.
+--- In buffer focus mode, navigates up the buffer list and live-switches.
 function actions.previous_sibling()
   local callback = function(display)
     if display.state.preview_focused then
       display:exit_preview_focus()
     end
 
-    -- If we're at root and buffer list is shown, navigate the buffer list
-    if display.focus_node.parent.is_root and display.state.in_buffer_list then
+    -- In buffer focus mode, navigate the buffer list and live-switch
+    if display.state.buffer_focused then
       for _ = 1, vim.v.count1 do
         if not display:navigate_buffer_list("up") then
           break
         end
       end
-      if display.state.buffer_focused then
-        display:select_buffer()
-      end
+      display:select_buffer()
       return
     end
 
@@ -553,6 +550,23 @@ function actions.comment()
   }
 end
 
+local function shift_range(range, delta)
+  range["start"].line = range["start"].line + delta
+  range["end"].line = range["end"].line + delta
+end
+
+--- Shift a node and its descendants by delta lines. navic reuses one table for
+--- scope and name_range when a server returns SymbolInformation.
+local function shift_node(node, delta)
+  shift_range(node.scope, delta)
+  if node.name_range ~= node.scope then
+    shift_range(node.name_range, delta)
+  end
+  for _, child in ipairs(node.children or {}) do
+    shift_node(child, delta)
+  end
+end
+
 local function swap_nodes(for_buf, nodeA, nodeB)
   -- nodeA
   --   ^
@@ -583,9 +597,15 @@ local function swap_nodes(for_buf, nodeA, nodeB)
   -- Swap pointers
   nodeA.next = nodeB.next
   nodeB.next = nodeA
+  if nodeA.next then
+    nodeA.next.prev = nodeA
+  end
 
   nodeB.prev = nodeA.prev
   nodeA.prev = nodeB
+  if nodeB.prev then
+    nodeB.prev.next = nodeB
+  end
 
   -- Swap index
   local nodeB_index = nodeB.index
@@ -598,15 +618,8 @@ local function swap_nodes(for_buf, nodeA, nodeB)
   parent.children[nodeB.index] = nodeB
 
   -- Adjust line numbers
-  nodeA.scope["start"].line = nodeA.scope["start"].line + nodeB_line_cnt + mid_line_cnt
-  nodeA.scope["end"].line = nodeA.scope["end"].line + nodeB_line_cnt + mid_line_cnt
-  nodeA.name_range["start"].line = nodeA.name_range["start"].line + nodeB_line_cnt + mid_line_cnt
-  nodeA.name_range["end"].line = nodeA.name_range["end"].line + nodeB_line_cnt + mid_line_cnt
-
-  nodeB.scope["start"].line = nodeB.scope["start"].line - nodeA_line_cnt - mid_line_cnt
-  nodeB.scope["end"].line = nodeB.scope["end"].line - nodeA_line_cnt - mid_line_cnt
-  nodeB.name_range["start"].line = nodeB.name_range["start"].line - nodeA_line_cnt - mid_line_cnt
-  nodeB.name_range["end"].line = nodeB.name_range["end"].line - nodeA_line_cnt - mid_line_cnt
+  shift_node(nodeA, nodeB_line_cnt + mid_line_cnt)
+  shift_node(nodeB, -(nodeA_line_cnt + mid_line_cnt))
 
   -- Set lines
   vim.api.nvim_buf_set_lines(for_buf, start_line, start_line + nodeB_line_cnt, false, nodeB_text)

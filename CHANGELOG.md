@@ -1,0 +1,46 @@
+# Changelog
+
+All notable changes to this fork are documented here. The format is based on
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.1.1] - 2026-11-05
+
+### Added
+
+- `TODO.md` listing known issues and suggestions, and this changelog.
+- Specs that run against the real display, with pending specs recording known bugs.
+
+### Changed
+
+- Replaced deprecated Neovim APIs, including `nvim_buf_add_highlight`, which is now handled by an extmark-based helper.
+
+### Fixed
+
+- Preview no longer crashes, so `l` on a leaf node, `s` and `window.sections.right.preview` work.
+- `j`/`k` move between top-level symbols again. They only move through the buffer list in buffer focus mode.
+- `J`/`K` keep the tree correct after a move, so sibling navigation follows the new order and later actions on a moved node's children hit the right lines. This also fixes moved nodes landing on the wrong lines with servers that return `SymbolInformation`.
+- `nvim-web-devicons` is now optional as documented; without it the buffer list shows file names only.
+- Opening no longer crashes with `window.border` set to `"none"`, `"shadow"` or a list of border characters, or with a border set on individual sections.
+
+## [0.1.0] - 2026-10-19
+
+First tagged version of this fork. It includes the upstream nvim-navbuddy history and the changes merged from
+hasansujon786's fork.
+
+### Added
+
+- Buffer list in the left panel at the top level, with buffer switching that keeps Navbuddy open.
+- Buffer focus mode: `h` at the top level focuses the buffer list, `j`/`k` live-switch the active buffer, and `l` returns to navigation.
+- Preview focus mode: `l` on a leaf node shows its source in the right panel and dims the other panels.
+- Breadcrumb title bar with truncation based on window width.
+- `:Navbuddy root` and `open({ root = true })` to open at the top-level node.
+- Fuzzy finding through snacks.nvim, alongside telescope.nvim.
+- Type annotations, help docs generated from source, and a plenary test suite run with `make test`.
+
+### Changed
+
+- Split the display into separate display and buffer rendering modules.
+- Modernized Neovim API usage.

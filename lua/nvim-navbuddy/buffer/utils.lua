@@ -1,7 +1,7 @@
 local state = require("nvim-navbuddy.state")
 
 local get_current_buffers = function(active_bufnr)
-  local devicons = require("nvim-web-devicons")
+  local has_devicons, devicons = pcall(require, "nvim-web-devicons")
 
   local loclist_items = {}
 
@@ -48,7 +48,7 @@ local get_current_buffers = function(active_bufnr)
       -- local numbers_text = {}
       -- numbers_text = { text = buffer .. " ", hl = "SidebarNvimBuffersNumber" }
 
-      local icon = { devicons.get_icon(bufname) }
+      local icon = has_devicons and { devicons.get_icon(bufname) } or {}
       loclist_items[#loclist_items + 1] = {
         group = "buffers",
         display = {

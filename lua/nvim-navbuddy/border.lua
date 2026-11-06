@@ -134,6 +134,32 @@ local function get_border(style, section)
   return border_chars_map[section]
 end
 
+--- Returns a new nui border options table for any supported border value: a
+--- style name, a list of border characters, or an options table.
+local function normalize(value)
+  if value == nil then
+    return {}
+  end
+  if type(value) == "string" or (value.style == nil and vim.islist(value)) then
+    return { style = value }
+  end
+  return vim.tbl_extend("force", {}, value)
+end
+
+--- Nui options for a section: its own border if set, else the window border.
+local function resolve(section_border, window_border, section)
+  return normalize(section_border or get_border(window_border, section))
+end
+
+--- Whether a configured border value can carry text such as the LSP name.
+local function supports_text(value)
+  local style = type(value) == "table" and value.style or value
+  return style ~= "none" and style ~= "shadow" and style ~= "solid"
+end
+
 return {
   get_border = get_border,
+  normalize = normalize,
+  resolve = resolve,
+  supports_text = supports_text,
 }

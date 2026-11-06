@@ -33,7 +33,7 @@ function display:new(obj)
 
   local title_popup = nui_popup({
     focusable = false,
-    border = config.window.sections.title.border or border.get_border(config.window.border, "title"),
+    border = border.resolve(config.window.sections.title.border, config.window.border, "title"),
     win_options = win_options,
     buf_options = {
       modifiable = false,
@@ -43,7 +43,7 @@ function display:new(obj)
   -- NUI elements
   local left_popup = nui_popup({
     focusable = false,
-    border = config.window.sections.left.border or border.get_border(config.window.border, "left"),
+    border = border.resolve(config.window.sections.left.border, config.window.border, "left"),
     win_options = win_options,
     buf_options = {
       modifiable = false,
@@ -52,7 +52,7 @@ function display:new(obj)
 
   local mid_popup = nui_popup({
     enter = true,
-    border = config.window.sections.mid.border or border.get_border(config.window.border, "mid"),
+    border = border.resolve(config.window.sections.mid.border, config.window.border, "mid"),
     win_options = vim.tbl_deep_extend("force", {
       scrolloff = config.window.scrolloff,
     }, win_options),
@@ -61,24 +61,13 @@ function display:new(obj)
     },
   })
 
-  local lsp_name = {
-    bottom = nui_text("[" .. obj.lsp_name .. "]", "NavbuddyFloatBorder"),
-    bottom_align = "right",
-  }
-
-  if
-    config.window.sections.right.border == "none"
-    or config.window.border == "none"
-    or config.window.sections.right.border == "shadow"
-    or config.window.border == "shadow"
-    or config.window.sections.right.border == "solid"
-    or config.window.border == "solid"
-  then
-    lsp_name = nil
+  local right_border = border.resolve(config.window.sections.right.border, config.window.border, "right")
+  if border.supports_text(config.window.sections.right.border or config.window.border) then
+    right_border.text = {
+      bottom = nui_text("[" .. obj.lsp_name .. "]", "NavbuddyFloatBorder"),
+      bottom_align = "right",
+    }
   end
-
-  local right_border = config.window.sections.right.border or border.get_border(config.window.border, "right")
-  right_border.text = lsp_name
   local right_popup = nui_popup({
     focusable = false,
     border = right_border,
@@ -371,7 +360,7 @@ end
 function display:show_preview()
   vim.api.nvim_win_set_buf(self.right.winid, self.for_buf)
 
-  vim.api.nvim_win_set_option_value(
+  vim.api.nvim_set_option_value(
     "winhighlight",
     "Normal:NavbuddyNormalFloat,FloatBorder:NavbuddyFloatBorder",
     { win = self.right.winid }

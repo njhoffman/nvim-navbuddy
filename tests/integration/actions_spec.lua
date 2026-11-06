@@ -175,8 +175,8 @@ describe("actions", function()
       assert.is_true(display._test.was_buffer_selected())
     end)
 
-    it("next_sibling does not select buffer when not focused", function()
-      local root = mock.make_tree({ { name = "top" } })
+    it("next_sibling moves to the next symbol when not focused", function()
+      local root = mock.make_tree({ { name = "top" }, { name = "second" } })
       local display = make_display(root.children[1], {
         in_buffer_list = true,
         buffer_focused = false,
@@ -184,6 +184,19 @@ describe("actions", function()
       })
       actions.next_sibling().callback(display)
       assert.is_false(display._test.was_buffer_selected())
+      assert.equals("second", display.focus_node.name)
+    end)
+
+    it("previous_sibling moves to the previous symbol when not focused", function()
+      local root = mock.make_tree({ { name = "top" }, { name = "second" } })
+      local display = make_display(root.children[2], {
+        in_buffer_list = true,
+        buffer_focused = false,
+        can_navigate = true,
+      })
+      actions.previous_sibling().callback(display)
+      assert.is_false(display._test.was_buffer_selected())
+      assert.equals("top", display.focus_node.name)
     end)
 
     it("children exits buffer focus mode", function()
