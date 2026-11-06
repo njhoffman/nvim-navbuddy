@@ -66,8 +66,8 @@ function display:new(obj)
   local right_border = border.resolve(config.window.sections.right.border, config.window.border, "right")
   if border.supports_text(config.window.sections.right.border or config.window.border) then
     right_border.text = {
-      bottom = nui_text("[" .. obj.lsp_name .. "]", "NavbuddyFloatBorder"),
-      bottom_align = "right",
+      top = nui_text("[" .. obj.lsp_name .. "]", "NavbuddyFloatBorder"),
+      top_align = "right",
     }
   end
   local right_popup = section_popup(config, "right", { border = right_border })
@@ -513,7 +513,7 @@ function display:commit_buffer_switch(bufnr, focus_node, lsp_name)
   self.for_buf = bufnr
   self.focus_node = focus_node
   self.lsp_name = lsp_name
-  self.right.border:set_text("bottom", nui_text("[" .. lsp_name .. "]", "NavbuddyFloatBorder"), "right")
+  self.right.border:set_text("top", nui_text("[" .. lsp_name .. "]", "NavbuddyFloatBorder"), "right")
 
   self:redraw()
   self:focus_range()

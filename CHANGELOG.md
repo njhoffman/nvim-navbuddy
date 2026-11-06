@@ -6,6 +6,12 @@ All notable changes to this fork are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-06
+
+### Changed
+
+- The window has no bottom border with the built-in border styles: the side lines run to the last row, which now holds a list item. The LSP name moved from the bottom border to the right end of the line above the lists.
+
 ## [0.3.0] - 2026-11-05
 
 ### Added

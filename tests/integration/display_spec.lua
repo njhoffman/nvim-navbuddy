@@ -350,6 +350,12 @@ describe("display", function()
       assert.is_true(mid_height(open_with_items(50, { window = { max_height = "60%" } })) > 12)
     end)
 
+    it("takes only the title and the line above the lists from max_height", function()
+      local display = open_with_items(50, { window = { max_height = 14 } })
+
+      assert.equals(11, mid_height(display))
+    end)
+
     it("keeps min_items on a screen too short for max_height", function()
       vim.o.lines = 12
 
@@ -401,7 +407,7 @@ describe("display", function()
     it("does not fit a fixed height", function()
       local display = open_with_items(2, { window = { size = { height = 20 } } })
 
-      assert.equals(16, mid_height(display))
+      assert.equals(17, mid_height(display))
     end)
 
     it("removes variation selectors from names and the title", function()
@@ -421,14 +427,14 @@ describe("display", function()
       local display = open(root.children[1], { window = { size = { width = 60, height = 20 } } })
 
       assert.equals(60, vim.api.nvim_win_get_width(display.title.winid) + 2)
-      assert.equals(16, total_height(display) - 1)
+      assert.equals(17, total_height(display) - 1)
     end)
 
     it("applies a percentage window.size to both dimensions", function()
       local display = open(root.children[1], { window = { size = "50%" } })
 
       assert.equals(50, vim.api.nvim_win_get_width(display.title.winid) + 2)
-      assert.equals(16, total_height(display) - 1)
+      assert.equals(17, total_height(display) - 1)
     end)
 
     it("applies window.position", function()
@@ -1159,7 +1165,7 @@ describe("display", function()
         wait_for_buffer(display, named)
 
         assert.equals("other_lsp", display.lsp_name)
-        assert.equals("[other_lsp]", display.right.border._.text.bottom:content())
+        assert.equals("[other_lsp]", display.right.border._.text.top:content())
       end)
 
       it("uses lsp.preference to choose the server", function()
@@ -1172,7 +1178,7 @@ describe("display", function()
         wait_for_buffer(display, other)
 
         assert.equals("preferred_lsp", display.lsp_name)
-        assert.equals("[preferred_lsp]", display.right.border._.text.bottom:content())
+        assert.equals("[preferred_lsp]", display.right.border._.text.top:content())
       end)
 
       it("loads an unloaded buffer before looking for a server", function()

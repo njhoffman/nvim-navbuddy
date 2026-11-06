@@ -83,9 +83,24 @@ describe("border", function()
 
     it("returns correct single-style mid border", function()
       local result = border.get_border("single", "mid")
-      -- mid: none, top, none, none, bottom_T, bottom, bottom, none
+      -- mid: only a top edge
       assert.equals("", result.style[1]) -- none
       assert.equals("", result.style[4]) -- none
+    end)
+
+    it("gives no section a bottom edge, and keeps the side lines to the last row", function()
+      for _, style in ipairs({ "single", "rounded", "double", "solid" }) do
+        local left = border.get_border(style, "left").style
+        local mid = border.get_border(style, "mid").style
+        local right = border.get_border(style, "right").style
+
+        for _, chars in ipairs({ left, mid, right }) do
+          assert.equals("", chars[6], style)
+        end
+        assert.same({ left[4], left[8] }, { left[5], left[7] }, style)
+        assert.same({ right[4], right[8] }, { right[5], right[7] }, style)
+        assert.same({ "", "" }, { mid[5], mid[7] }, style)
+      end
     end)
   end)
 end)
