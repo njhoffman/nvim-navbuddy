@@ -136,13 +136,13 @@ node_markers: table
       -- border can be string or an array with eight chars building up the border in a clockwise fashion
       -- starting with the top-left corner. eg: { "╔", "═" ,"╗", "║", "╝", "═", "╚", "║" }.
       border = "single",     -- Options: "double"|"none"|"rounded"|"shadow"|"single"|"solid"|"default"
-      size = "60%",          -- Or table format example: { height = "40%", width = "100%"}
-      position = "50%",      -- Or table format example: { row = "100%", col = "0%"}
+      size = { width = 80, height = 15 }, -- Or a percentage for both, example: "60%"}
+      position = "98%",      -- Or table format example: { row = "100%", col = "0%"}
       scrolloff = nil,       -- scrolloff value within navbuddy window
       sections = {
         left = {
           border = nil,      -- You can set border style for each section individually as well.
-          size = "20%",
+          size = "30%",
           win_options = nil, -- list of window options for each section individually.
         },
         mid = {

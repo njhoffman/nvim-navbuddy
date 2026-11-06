@@ -12,7 +12,7 @@ describe("navbuddy.setup", function()
   it("loads default config without errors", function()
     local _, config = fresh_require()
     assert.equals("single", config.window.border)
-    assert.equals("60%", config.window.size)
+    assert.same({ width = 80, height = 15 }, config.window.size)
     assert.equals(true, config.use_default_mappings)
     assert.equals(false, config.lsp.auto_attach)
   end)
@@ -28,7 +28,7 @@ describe("navbuddy.setup", function()
     assert.equals("rounded", config.window.border)
     assert.equals("80%", config.window.size)
     -- defaults preserved
-    assert.equals("50%", config.window.position)
+    assert.equals("98%", config.window.position)
   end)
 
   it("sets section border defaults to 'none' when one is specified", function()
@@ -91,6 +91,20 @@ describe("navbuddy.setup", function()
       custom_hl_group = "Visual",
     })
     assert.equals("Visual", config.custom_hl_group)
+  end)
+
+  it("applies theme", function()
+    local navbuddy, config = fresh_require()
+    navbuddy.setup({ theme = "hl-icon" })
+    assert.equals("hl-icon", config.theme)
+  end)
+
+  it("applies integrations and keeps the ones not set", function()
+    local navbuddy, config = fresh_require()
+    config.integrations.snacks = "auto"
+    navbuddy.setup({ integrations = { telescope = false } })
+    assert.is_false(config.integrations.telescope)
+    assert.equals("auto", config.integrations.snacks)
   end)
 
   it("handles nil config gracefully", function()

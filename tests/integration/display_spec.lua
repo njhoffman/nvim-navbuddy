@@ -275,6 +275,189 @@ describe("display", function()
     end)
   end)
 
+  describe("layout", function()
+    local saved_columns, saved_lines
+
+    before_each(function()
+      saved_columns, saved_lines = vim.o.columns, vim.o.lines
+      vim.o.columns, vim.o.lines = 100, 40
+    end)
+
+    after_each(function()
+      if current and not current.state.closed then
+        pcall(current.close, current)
+      end
+      vim.o.columns, vim.o.lines = saved_columns, saved_lines
+    end)
+
+    local function outer_width(popup)
+      local win_config = vim.api.nvim_win_get_config(popup.winid)
+      return vim.api.nvim_win_get_width(popup.winid) + (#win_config.border > 0 and 2 or 0)
+    end
+
+    local function total_height(display)
+      return vim.api.nvim_win_get_height(display.title.winid) + vim.api.nvim_win_get_height(display.mid.winid)
+    end
+
+    it("keeps the default 80x15 window", function()
+      local display = open(root.children[1])
+
+      assert.equals(80, vim.api.nvim_win_get_width(display.title.winid) + 2)
+      assert.equals(11, total_height(display) - 1)
+    end)
+
+    it("applies a fixed window.size", function()
+      local display = open(root.children[1], { window = { size = { width = 60, height = 20 } } })
+
+      assert.equals(60, vim.api.nvim_win_get_width(display.title.winid) + 2)
+      assert.equals(16, total_height(display) - 1)
+    end)
+
+    it("applies a percentage window.size to both dimensions", function()
+      local display = open(root.children[1], { window = { size = "50%" } })
+
+      assert.equals(50, vim.api.nvim_win_get_width(display.title.winid) + 2)
+      assert.equals(16, total_height(display) - 1)
+    end)
+
+    it("applies window.position", function()
+      local top_left = open(root.children[1], { window = { position = { row = 0, col = 0 } } })
+      local start_pos = vim.fn.win_screenpos(top_left.title.winid)
+      top_left:close()
+
+      local bottom_right = open(root.children[1], { window = { position = { row = "100%", col = "100%" } } })
+      local end_pos = vim.fn.win_screenpos(bottom_right.title.winid)
+
+      assert.is_true(start_pos[1] < end_pos[1])
+      assert.is_true(start_pos[2] < end_pos[2])
+    end)
+
+    it("applies section sizes and lets the right section fill the rest", function()
+      local narrow =
+        open(root.children[1], { window = { sections = { left = { size = "20%" }, mid = { size = "20%" } } } })
+      local narrow_left, narrow_mid = outer_width(narrow.left), outer_width(narrow.mid)
+      local narrow_right = vim.api.nvim_win_get_width(narrow.right.winid)
+      narrow:close()
+
+      local wide =
+        open(root.children[1], { window = { sections = { left = { size = "40%" }, mid = { size = "40%" } } } })
+
+      assert.is_true(narrow_left < outer_width(wide.left))
+      assert.is_true(narrow_mid < outer_width(wide.mid))
+      assert.is_true(narrow_right > vim.api.nvim_win_get_width(wide.right.winid))
+    end)
+
+    it("applies a section's win_options to that section only", function()
+      local display = open(root.children[1], { window = { sections = { mid = { win_options = { number = true } } } } })
+
+      assert.is_true(vim.wo[display.mid.winid].number)
+      assert.is_false(vim.wo[display.left.winid].number)
+    end)
+
+    it("applies a section's buf_options to that section only", function()
+      local display = open(root.children[1], { window = { sections = { mid = { buf_options = { tabstop = 3 } } } } })
+
+      assert.equals(3, vim.bo[display.mid.bufnr].tabstop)
+      assert.are_not.equal(3, vim.bo[display.left.bufnr].tabstop)
+    end)
+
+    it("restores a section's own winhighlight after buffer focus", function()
+      local custom = "Normal:Comment"
+      local display =
+        open(root.children[1], { window = { sections = { mid = { win_options = { winhighlight = custom } } } } })
+
+      assert.equals(custom, winhighlight(display.mid))
+      press(actions.parent())
+      assert.equals(DIM_WINHL, winhighlight(display.mid))
+      press(actions.children())
+      assert.equals(custom, winhighlight(display.mid))
+    end)
+
+    it("applies window.winblend", function()
+      local display = open(root.children[1], { window = { winblend = 20 } })
+
+      assert.equals(20, vim.wo[display.mid.winid].winblend)
+    end)
+
+    it("uses the configured theme", function()
+      local display = open(root.children[1], { theme = "hl-icon" })
+
+      assert_has(panel_text(display.mid), "first")
+    end)
+
+    for _, case in ipairs({ { 60, 40 }, { 100, 10 }, { 40, 8 } }) do
+      it(("opens the default window on a %dx%d screen"):format(case[1], case[2]), function()
+        vim.o.columns, vim.o.lines = case[1], case[2]
+
+        local display = open(root.children[1])
+
+        assert.is_true(vim.api.nvim_win_is_valid(display.mid.winid))
+        assert.is_true(vim.api.nvim_win_get_height(display.mid.winid) >= 1)
+      end)
+    end
+  end)
+
+  describe("help", function()
+    local saved_lines
+
+    before_each(function()
+      saved_lines = vim.o.lines
+    end)
+
+    after_each(function()
+      vim.o.lines = saved_lines
+    end)
+
+    local function help_win()
+      local win = vim.api.nvim_get_current_win()
+      assert.are_not.equal("", vim.api.nvim_win_get_config(win).relative)
+      return win
+    end
+
+    it("fits every mapping in a centered window", function()
+      vim.o.lines = 60
+      open(root.children[2], { window = { position = { row = 0, col = 0 } } })
+
+      press(actions.help())
+
+      local win = help_win()
+      local buf = vim.api.nvim_win_get_buf(win)
+      assert.equals(vim.api.nvim_buf_line_count(buf), vim.api.nvim_win_get_height(win))
+      assert.is_true(vim.fn.win_screenpos(win)[1] > 5)
+      vim.api.nvim_win_close(win, true)
+    end)
+
+    it("stays within a short screen", function()
+      vim.o.lines = 12
+      open(root.children[2])
+
+      press(actions.help())
+
+      local win = help_win()
+      assert.is_true(vim.api.nvim_win_get_height(win) <= 8)
+      vim.api.nvim_win_close(win, true)
+    end)
+
+    it("opens with a border character list", function()
+      open(root.children[2], { window = { border = { "╔", "═", "╗", "║", "╝", "═", "╚", "║" } } })
+
+      press(actions.help())
+
+      vim.api.nvim_win_close(help_win(), true)
+    end)
+
+    it("reopens Navbuddy when closed with q", function()
+      local display = open(root.children[2])
+
+      press(actions.help())
+      vim.cmd("normal q")
+
+      assert.is_false(display.state.closed)
+      assert.equals("second", display.focus_node.name)
+      assert.equals(display.mid.winid, vim.api.nvim_get_current_win())
+    end)
+  end)
+
   describe("buffer list icons", function()
     local function without_devicons()
       package.loaded["nvim-web-devicons"] = nil

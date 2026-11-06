@@ -15,9 +15,10 @@
 ---@class WindowConfig
 ---@field border? BorderConfig
 ---@field size? number|string|nui_layout_option_size
----@field position? string
+---@field position? number|string|nui_layout_option_position
+---@field winblend? number
 ---@field scrolloff? number
----@field sections? { left?: WindowSectionConfig, mid?: WindowSectionConfig, right?: WindowSectionConfig }
+---@field sections? { title?: WindowSectionConfig, left?: WindowSectionConfig, mid?: WindowSectionConfig, right?: WindowSectionConfig }
 
 ---@class NodeMarkersIcons
 ---@field leaf? string
@@ -43,6 +44,7 @@
 ---@field scrolloff? number
 
 ---@class Navbuddy.config
+---@field theme? "hl-line"|"hl-icon"
 ---@field window? WindowConfig
 ---@field node_markers? NodeMarkersConfig
 ---@field icons? table<number, string>

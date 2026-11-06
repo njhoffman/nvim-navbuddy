@@ -41,13 +41,17 @@ Reviewed: 2026-11-05
 - [ ] **`open(bufnr)` mishandles a buffer that isn't current.** (p2) [bug] `init.lua:154` calls `navic.request_symbol`, which asks about the current buffer instead of `bufnr`. Its `file_uri` argument doesn't help, because navic nests it as `textDocument.textDocument`.
   The handler also takes its window and cursor from the current window (`init.lua:203`, `:230-231`), so the display would pair them with the wrong buffer.
   Fix: send the request directly, as `display:reload_buffer` does, and use a window showing `bufnr` or open it in the current one.
-- [ ] **`setup()` drops `theme` and `integrations`.** (p2) [bug] Neither key is merged into the config (`init.lua:264-316`).
+- [x] **`setup()` drops `theme` and `integrations`.** (p2) [bug] Neither key is merged into the config (`init.lua:264-316`).
   Reproduced: `setup({ theme = "hl-icon", integrations = { telescope = false } })` leaves `hl-line` and `nil`.
   Fix: merge them, ideally replacing the per-key merging with one `tbl_deep_extend` plus the mapping special case.
-- [ ] **`window.size`, `position` and section options have no effect.** (p2) [bug] The layout is hardcoded to 80x15 at `"98%"` (`display/menu.lua:93-113`).
+- [x] **`window.size`, `position` and section options have no effect.** (p2) [bug] The layout is hardcoded to 80x15 at `"98%"` (`display/menu.lua:93-113`).
   Reproduced: the mid pane is 32 columns wide on a 200-column screen with the default `size = "60%"`.
   `sections.*.size`, `sections.*.win_options` and `sections.*.buf_options` are also never read, though the README or types document them, and the config spec only asserts the table contents.
   Fix: build the layout from config, and decide whether the commented-out `utils.get_layout_opts` sizing is still wanted.
+- [x] **Help window is smaller with the new default size.** (p2) [bug] `actions.help` uses `window.size` and `window.position`, which now default to 80x15 at `98%`, so the mappings list needs scrolling.
+  Fix: give help its own size, large enough for the mapping count and centered.
+- [ ] **`wrap` in a section's `win_options` is overwritten.** (p3) [bug] `clear_buffer` sets `wrap = true` on each redraw (`buffer/utils.lua:81`), and also `signcolumn` and `foldlevel`.
+  Fix: stop setting these on every fill, and restore them only after a preview.
 - [ ] **`:Navbuddy` does not exist until `setup()` runs.** (p2) [bug] The README's `attach`-only flow ends in an unknown command.
   Reproduced: `exists(":Navbuddy")` is 0 after `require`, and the repo has no `plugin/` directory.
   Fix: define the command from `plugin/navbuddy.lua`, with lazy requires so startup stays cheap.

@@ -10,6 +10,37 @@ local border = require("nvim-navbuddy.border")
 
 local display = {}
 
+local NORMAL_WINHIGHLIGHT = "Normal:NavbuddyNormalFloat,FloatBorder:NavbuddyFloatBorder"
+local DIM_WINHIGHLIGHT = "Normal:NavbuddyNormalFloatDim,FloatBorder:NavbuddyFloatBorderDim"
+
+--- Build a section's popup. Options from the section's config win over the
+--- defaults and over `opts`.
+---@param config Navbuddy.config
+---@param section "title"|"left"|"mid"|"right"
+---@param opts? { enter?: boolean, focusable?: boolean, border?: table, win_options?: table }
+local function section_popup(config, section, opts)
+  opts = opts or {}
+  local section_config = config.window.sections[section]
+
+  local win_options = vim.tbl_extend("force", {
+    wrap = false,
+    cursorline = false,
+    winhighlight = NORMAL_WINHIGHLIGHT,
+    winblend = config.window.winblend,
+  }, opts.win_options or {}, section_config.win_options or {})
+
+  local popup = nui_popup({
+    enter = opts.enter,
+    focusable = opts.focusable or false,
+    border = opts.border or border.resolve(section_config.border, config.window.border, section),
+    win_options = win_options,
+    buf_options = vim.tbl_extend("force", { modifiable = false }, section_config.buf_options or {}),
+  })
+  popup.panel = section
+  popup.normal_winhighlight = win_options.winhighlight
+  return popup
+end
+
 function display:new(obj)
   -- Object
   setmetatable(obj, self)
@@ -23,45 +54,12 @@ function display:new(obj)
 
   obj.winblend = config.window.winblend
 
-  local win_options = {
-    wrap = false,
-    cursorline = false,
-    winhighlight = "Normal:NavbuddyNormalFloat,FloatBorder:NavbuddyFloatBorder",
-  }
-  if obj.winblend ~= nil then
-    win_options = vim.tbl_deep_extend("force", win_options, {
-      winblend = obj.winblend,
-    })
-  end
-
-  local title_popup = nui_popup({
-    focusable = false,
-    border = border.resolve(config.window.sections.title.border, config.window.border, "title"),
-    win_options = win_options,
-    buf_options = {
-      modifiable = false,
-    },
-  })
-
-  -- NUI elements
-  local left_popup = nui_popup({
-    focusable = false,
-    border = border.resolve(config.window.sections.left.border, config.window.border, "left"),
-    win_options = win_options,
-    buf_options = {
-      modifiable = false,
-    },
-  })
-
-  local mid_popup = nui_popup({
+  local title_popup = section_popup(config, "title")
+  local left_popup = section_popup(config, "left")
+  local mid_popup = section_popup(config, "mid", {
     enter = true,
-    border = border.resolve(config.window.sections.mid.border, config.window.border, "mid"),
-    win_options = vim.tbl_deep_extend("force", {
-      scrolloff = config.window.scrolloff,
-    }, win_options),
-    buf_options = {
-      modifiable = false,
-    },
+    focusable = true,
+    win_options = { scrolloff = config.window.scrolloff },
   })
 
   local right_border = border.resolve(config.window.sections.right.border, config.window.border, "right")
@@ -71,25 +69,13 @@ function display:new(obj)
       bottom_align = "right",
     }
   end
-  local right_popup = nui_popup({
-    focusable = false,
-    border = right_border,
-    win_options = win_options,
-    buf_options = {
-      modifiable = false,
-    },
-  })
-
-  -- utils.get_layout_opts(),
+  local right_popup = section_popup(config, "right", { border = right_border })
 
   local layout = nui_layout(
     {
       relative = "editor",
-      size = {
-        width = 80,
-        height = 15,
-      },
-      position = "98%",
+      size = config.window.size,
+      position = config.window.position,
     },
     nui_layout.Box({
       nui_layout.Box(title_popup, { size = {
@@ -97,19 +83,14 @@ function display:new(obj)
         width = "100%",
       } }),
       nui_layout.Box({
-        nui_layout.Box(left_popup, { size = { width = "30%" } }),
-        nui_layout.Box(mid_popup, { size = { width = "40%" } }),
+        nui_layout.Box(left_popup, { size = { width = config.window.sections.left.size } }),
+        nui_layout.Box(mid_popup, { size = { width = config.window.sections.mid.size } }),
         nui_layout.Box(right_popup, { grow = 1 }),
-      }, { dir = "row", size = { height = 13 } }),
+      }, { dir = "row", grow = 1 }),
     }, { dir = "col" })
   )
 
   obj.layout = layout
-
-  left_popup.panel = "left"
-  mid_popup.panel = "mid"
-  right_popup.panel = "right"
-  title_popup.panel = "title"
 
   obj.left = left_popup
   obj.mid = mid_popup
@@ -363,11 +344,7 @@ end
 function display:show_preview()
   vim.api.nvim_win_set_buf(self.right.winid, self.for_buf)
 
-  vim.api.nvim_set_option_value(
-    "winhighlight",
-    "Normal:NavbuddyNormalFloat,FloatBorder:NavbuddyFloatBorder",
-    { win = self.right.winid }
-  )
+  vim.api.nvim_set_option_value("winhighlight", self.right.normal_winhighlight, { win = self.right.winid })
   vim.api.nvim_set_option_value("signcolumn", "no", { win = self.right.winid })
   vim.api.nvim_set_option_value("foldlevel", 100, { win = self.right.winid })
   vim.api.nvim_set_option_value("wrap", false, { win = self.right.winid })
@@ -605,32 +582,29 @@ end
 function display:enter_preview_focus()
   self.state.preview_focused = true
   self:show_preview()
-  local dim = "Normal:NavbuddyNormalFloatDim,FloatBorder:NavbuddyFloatBorderDim"
-  vim.wo[self.left.winid].winhighlight = dim
-  vim.wo[self.mid.winid].winhighlight = dim
+  vim.wo[self.left.winid].winhighlight = DIM_WINHIGHLIGHT
+  vim.wo[self.mid.winid].winhighlight = DIM_WINHIGHLIGHT
 end
 
 function display:exit_preview_focus()
   self.state.preview_focused = false
-  local normal_winhighlight = "Normal:NavbuddyNormalFloat,FloatBorder:NavbuddyFloatBorder"
-  vim.wo[self.left.winid].winhighlight = normal_winhighlight
-  vim.wo[self.mid.winid].winhighlight = normal_winhighlight
+  vim.wo[self.left.winid].winhighlight = self.left.normal_winhighlight
+  vim.wo[self.mid.winid].winhighlight = self.mid.normal_winhighlight
   self:redraw()
 end
 
 function display:enter_buffer_focus()
   self.state.buffer_focused = true
   vim.wo[self.left.winid].cursorline = true
-  vim.wo[self.mid.winid].winhighlight = "Normal:NavbuddyNormalFloatDim,FloatBorder:NavbuddyFloatBorderDim"
-  vim.wo[self.right.winid].winhighlight = "Normal:NavbuddyNormalFloatDim,FloatBorder:NavbuddyFloatBorderDim"
+  vim.wo[self.mid.winid].winhighlight = DIM_WINHIGHLIGHT
+  vim.wo[self.right.winid].winhighlight = DIM_WINHIGHLIGHT
 end
 
 function display:exit_buffer_focus()
   self.state.buffer_focused = false
   vim.wo[self.left.winid].cursorline = false
-  local normal_winhighlight = "Normal:NavbuddyNormalFloat,FloatBorder:NavbuddyFloatBorder"
-  vim.wo[self.mid.winid].winhighlight = normal_winhighlight
-  vim.wo[self.right.winid].winhighlight = normal_winhighlight
+  vim.wo[self.mid.winid].winhighlight = self.mid.normal_winhighlight
+  vim.wo[self.right.winid].winhighlight = self.right.normal_winhighlight
 end
 
 function display:close()

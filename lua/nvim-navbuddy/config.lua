@@ -77,14 +77,14 @@ local config = {
   -- padding = { icon_left = 1, icon_right = 1, node_marker = 0, scroll_bar = 1 },
   window = {
     border = "single",
-    size = "60%",
-    position = "50%",
+    size = { width = 80, height = 15 },
+    position = "98%",
     scrolloff = nil,
     winblend = nil, -- winblend value [0-100 or nil] (transparency)
     sections = {
       title = {},
       left = {
-        size = "20%",
+        size = "30%",
         border = nil,
         win_options = nil
       },

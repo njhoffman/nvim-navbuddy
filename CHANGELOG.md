@@ -6,6 +6,15 @@ All notable changes to this fork are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-05
+
+### Fixed
+
+- `window.size`, `window.position` and each section's `size`, `win_options` and `buf_options` now take effect. The defaults are the layout Navbuddy already used: 80x15 at `98%`, with a 30% left section. If your setup sets these options, expect the window to change.
+- `setup()` now applies `theme` and `integrations`.
+- Leaving buffer or preview focus mode restores a section's own `winhighlight`.
+- The help window is centered and tall enough for every mapping, and opens with a list of border characters.
+
 ## [0.2.0] - 2026-11-05
 
 ### Changed

@@ -313,6 +313,14 @@ function navbuddy.setup(user_config)
     if user_config.custom_hl_group ~= nil then
       config.custom_hl_group = user_config.custom_hl_group
     end
+
+    if user_config.theme ~= nil then
+      config.theme = user_config.theme
+    end
+
+    if user_config.integrations ~= nil then
+      config.integrations = vim.tbl_deep_extend("keep", user_config.integrations, config.integrations)
+    end
   end
 
   if config.lsp.auto_attach == true then

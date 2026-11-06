@@ -772,13 +772,17 @@ function actions.help()
 
     local nui_popup = require("nui.popup")
 
+    -- Header lines plus one line per mapping, within the editor's height
+    local line_count = 2 + vim.tbl_count(display.config.mappings)
+    local max_height = math.max(vim.o.lines - 4, 1)
+
     local help_popup = nui_popup({
       relative = "editor",
-      position = display.config.window.position,
-      size = display.config.window.size,
+      position = "50%",
+      size = { width = "60%", height = math.min(line_count, max_height) },
       enter = true,
       focusable = true,
-      border = display.config.window.border,
+      border = require("nvim-navbuddy.border").normalize(display.config.window.border),
       win_options = {
         winhighlight = "Normal:NavbuddyNormalFloat,FloatBorder:NavbuddyFloatBorder",
       },
