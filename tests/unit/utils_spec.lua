@@ -33,6 +33,42 @@ describe("utils", function()
     end)
   end)
 
+  describe("display_text", function()
+    it("removes variation selectors", function()
+      assert.equals("\226\154\153 Configuration", utils.display_text("\226\154\153\239\184\143 Configuration"))
+      assert.equals("a", utils.display_text("a\239\184\142"))
+    end)
+
+    it("removes zero width joiners", function()
+      assert.equals("ab", utils.display_text("a\226\128\141b"))
+    end)
+
+    it("leaves other text alone", function()
+      assert.equals("日本語 🔥 café", utils.display_text("日本語 🔥 café"))
+    end)
+  end)
+
+  describe("height_in_rows", function()
+    local saved_lines
+
+    before_each(function()
+      saved_lines = vim.o.lines
+      vim.o.lines = 40
+    end)
+
+    after_each(function()
+      vim.o.lines = saved_lines
+    end)
+
+    it("converts a percentage of the editor", function()
+      assert.equals(12, utils.height_in_rows("30%"))
+    end)
+
+    it("returns numbers unchanged", function()
+      assert.equals(15, utils.height_in_rows(15))
+    end)
+  end)
+
   describe("check_integration", function()
     it("returns true when explicitly enabled", function()
       local config = { integrations = { telescope = true } }

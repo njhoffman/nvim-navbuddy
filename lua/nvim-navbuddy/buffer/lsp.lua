@@ -23,7 +23,10 @@ local function fill_lsp(buf, node, config)
   local lines = {}
   local text_width = buf._.size.width - marker_width(config)
   for _, child_node in ipairs(parent.children) do
-    table.insert(lines, utils.fit_width(" " .. config.icons[child_node.kind] .. child_node.name, text_width))
+    table.insert(
+      lines,
+      utils.fit_width(" " .. config.icons[child_node.kind] .. utils.display_text(child_node.name), text_width)
+    )
   end
 
   vim.bo[buf.bufnr].modifiable = true

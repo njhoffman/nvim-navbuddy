@@ -6,6 +6,20 @@ All notable changes to this fork are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-05
+
+### Added
+
+- `window.min_items` and `window.max_height`. Without a height in `window.size`, the window fits its lists between them, and longer lists scroll.
+
+### Changed
+
+- The default window is shorter and sits at the bottom of the editor: `size = { width = 80 }`, `position = "100%"`, at least 5 rows and at most 30% of the editor. A percentage or a `height` in `window.size` still gives a fixed size.
+
+### Fixed
+
+- Symbol names containing variation selectors or zero width joiners, such as `⚙️`, no longer shift the window borders on that row. These characters are removed from names shown in Navbuddy.
+
 ## [0.2.5] - 2026-11-05
 
 ### Changed

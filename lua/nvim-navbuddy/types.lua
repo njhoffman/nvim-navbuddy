@@ -17,6 +17,8 @@
 ---@field size? number|string|nui_layout_option_size
 ---@field position? number|string|nui_layout_option_position
 ---@field winblend? number
+---@field min_items? number
+---@field max_height? number|string
 ---@field scrolloff? number
 ---@field sections? { title?: WindowSectionConfig, left?: WindowSectionConfig, mid?: WindowSectionConfig, right?: WindowSectionConfig }
 

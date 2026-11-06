@@ -119,8 +119,12 @@ navbuddy.setup {
         border = "single",  -- "rounded", "double", "solid", "none"
                             -- or an array with eight chars building up the border in a clockwise fashion
                             -- starting with the top-left corner. eg: { "╔", "═" ,"╗", "║", "╝", "═", "╚", "║" }.
-        size = { width = 80, height = 15 }, -- Or a percentage for both, example: "60%"
-        position = "98%",   -- Or table format example: { row = "100%", col = "0%"}
+        size = { width = 80 }, -- Without a height, the window fits its content between
+                            -- min_items and max_height. Set a height, or a percentage
+                            -- for both such as "60%", for a fixed size.
+        position = "100%",  -- Or table format example: { row = "100%", col = "0%"}
+        min_items = 5,      -- Fewest list rows to show
+        max_height = "30%", -- Tallest the window gets, including its title and borders
         scrolloff = nil,    -- scrolloff value within navbuddy window
         sections = {
             left = {

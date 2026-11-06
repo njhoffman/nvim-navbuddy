@@ -77,8 +77,10 @@ local config = {
   -- padding = { icon_left = 1, icon_right = 1, node_marker = 0, scroll_bar = 1 },
   window = {
     border = "single",
-    size = { width = 80, height = 15 },
-    position = "98%",
+    size = { width = 80 }, -- no height: fit the content between min_items and max_height
+    position = "100%",
+    min_items = 5, -- fewest list rows to show
+    max_height = "30%", -- tallest the window gets, including its title and borders
     scrolloff = nil,
     winblend = nil, -- winblend value [0-100 or nil] (transparency)
     sections = {

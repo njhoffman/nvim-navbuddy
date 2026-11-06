@@ -1,6 +1,7 @@
 local navic = require("nvim-navic.lib")
 local buf_utils = require("nvim-navbuddy.buffer.utils")
 local state = require("nvim-navbuddy.state")
+local utils = require("nvim-navbuddy.utils")
 
 local function node_chain_length(node_chain, separator)
   local path_length = 0
@@ -44,7 +45,7 @@ local function fill_title(buf, focus_node, config, opts)
   local chain_length = 0
   for i, node in ipairs(node_chain) do
     if not node.is_root then
-      local name = vim.trim(node.name)
+      local name = vim.trim(utils.display_text(node.name))
       chain_length = chain_length + display_width(config.icons[node.kind]) + display_width(name)
       if i > 1 then
         chain_length = chain_length + display_width(opts.separator)

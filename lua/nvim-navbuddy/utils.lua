@@ -53,6 +53,27 @@ request_document_symbols = function(client, bufnr, callback, opts)
   end
 end
 
+--- Remove characters that change how the character before them is drawn: variation
+--- selectors and the zero width joiner. Editors, multiplexers and terminals disagree
+--- on the resulting width, and any disagreement shifts the rest of the row, including
+--- the window borders.
+---@param text string
+---@return string
+local function display_text(text)
+  return (text:gsub("\239\184\142", ""):gsub("\239\184\143", ""):gsub("\226\128\141", ""))
+end
+
+--- Number of rows for a height given as a number or a percentage of the editor.
+---@param value number|string
+---@return number
+local function height_in_rows(value)
+  local percent = type(value) == "string" and value:match("^(%d+)%%$")
+  if percent then
+    return math.floor(vim.o.lines * tonumber(percent) / 100)
+  end
+  return tonumber(value) or 0
+end
+
 --- Pad or shorten text to exactly `width` display cells, cutting on whole characters.
 ---@param text string
 ---@param width number
@@ -78,5 +99,7 @@ end
 return {
   request_document_symbols = request_document_symbols,
   fit_width = fit_width,
+  display_text = display_text,
+  height_in_rows = height_in_rows,
   check_integration = check_integration,
 }

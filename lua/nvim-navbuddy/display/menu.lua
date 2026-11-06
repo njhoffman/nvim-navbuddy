@@ -11,6 +11,7 @@ local border = require("nvim-navbuddy.border")
 local display = {}
 
 local NORMAL_WINHIGHLIGHT = "Normal:NavbuddyNormalFloat,FloatBorder:NavbuddyFloatBorder"
+local TITLE_HEIGHT = 2
 local DIM_WINHIGHLIGHT = "Normal:NavbuddyNormalFloatDim,FloatBorder:NavbuddyFloatBorderDim"
 
 --- Build a section's popup. Options from the section's config win over the
@@ -71,15 +72,31 @@ function display:new(obj)
   end
   local right_popup = section_popup(config, "right", { border = right_border })
 
+  -- With no fixed height, mount at the tallest size; redraw fits it to the content
+  local size = config.window.size
+  obj.auto_height = type(size) == "table" and size.height == nil
+  if obj.auto_height then
+    -- Rows taken by the title and the tallest section's borders, not by list items
+    obj.layout_chrome = TITLE_HEIGHT
+      + math.max(
+        left_popup.border._.size_delta.height,
+        mid_popup.border._.size_delta.height,
+        right_popup.border._.size_delta.height
+      )
+    obj.layout_height =
+      math.max(utils.height_in_rows(config.window.max_height), config.window.min_items + obj.layout_chrome)
+    size = { width = size.width, height = obj.layout_height }
+  end
+
   local layout = nui_layout(
     {
       relative = "editor",
-      size = config.window.size,
+      size = size,
       position = config.window.position,
     },
     nui_layout.Box({
       nui_layout.Box(title_popup, { size = {
-        height = 2,
+        height = TITLE_HEIGHT,
         width = "100%",
       } }),
       nui_layout.Box({
@@ -363,6 +380,33 @@ function display:redraw()
   }
   local opts = { winsize = winsize, align = "center", separator = "  " }
   buffer.fill_title(self.title, node, self.config, opts)
+  self:fit_height()
+end
+
+--- Size the window to the longest list, between window.min_items rows and
+--- window.max_height. Lists longer than that scroll.
+function display:fit_height()
+  if not self.auto_height then
+    return
+  end
+
+  local items = math.max(
+    vim.api.nvim_buf_line_count(self.left.bufnr),
+    vim.api.nvim_buf_line_count(self.mid.bufnr),
+    vim.api.nvim_buf_line_count(self.right.bufnr)
+  )
+  local window = self.config.window
+  local max_rows = utils.height_in_rows(window.max_height) - self.layout_chrome
+  local rows = math.max(math.min(items, max_rows), window.min_items)
+  local height = rows + self.layout_chrome
+
+  if height ~= self.layout_height then
+    self.layout_height = height
+    self.layout:update({
+      size = { width = window.size.width, height = height },
+      position = window.position,
+    })
+  end
 end
 
 --- Switch the source window to the buffer under the buffer list cursor. The

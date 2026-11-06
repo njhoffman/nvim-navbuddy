@@ -125,6 +125,8 @@ Reviewed: 2026-11-05
 
 ## 5. Suggestions
 
+- [ ] **`hide_empty` section option isn't implemented.** (p3) [feature] `~/.config/nvim/lua/configs/nvim-navbuddy.lua` sets `sections.left.hide_empty = true`, but no code reads it.
+  Implement it or remove it from that config.
 - [ ] **Report why nothing opened.** (p2) [feature] `:Navbuddy` returns silently when a buffer has no symbols (`init.lua:215-217`).
   Fix: notify at INFO level. Also covers the "error handling" note in `DEVELOPMENT_NOTES.md`.
 - [ ] **Switch to buffers whose LSP is still starting.** (p3) [feature] Selecting an unloaded buffer loads it, but its server usually hasn't attached yet, so the first press warns and only a later press switches.

@@ -299,11 +299,122 @@ describe("display", function()
       return vim.api.nvim_win_get_height(display.title.winid) + vim.api.nvim_win_get_height(display.mid.winid)
     end
 
-    it("keeps the default 80x15 window", function()
+    local function mid_height(display)
+      return vim.api.nvim_win_get_height(display.mid.winid)
+    end
+
+    local function bottom_row(display)
+      return vim.fn.win_screenpos(display.mid.winid)[1] + mid_height(display) - 1
+    end
+
+    local function open_with_items(count, overrides)
+      local specs = {}
+      for i = 1, count do
+        specs[i] = { name = "item_" .. i }
+      end
+      root = mock.make_tree(specs)
+      vim.api.nvim_buf_set_lines(source_buf, 0, -1, false, mock.source_lines(root))
+      return open(root.children[1], overrides)
+    end
+
+    it("defaults to 80 columns", function()
       local display = open(root.children[1])
 
       assert.equals(80, vim.api.nvim_win_get_width(display.title.winid) + 2)
-      assert.equals(11, total_height(display) - 1)
+    end)
+
+    it("shows min_items rows for a short list", function()
+      assert.equals(5, mid_height(open_with_items(2)))
+    end)
+
+    it("fits a list between the limits", function()
+      assert.equals(7, mid_height(open_with_items(7)))
+    end)
+
+    it("stops at max_height and lets a long list scroll", function()
+      local display = open_with_items(50)
+      local tallest = mid_height(display)
+
+      assert.is_true(tallest < 12)
+      assert.equals(50, vim.api.nvim_buf_line_count(display.mid.bufnr))
+      for _ = 1, 21 do
+        press(actions.next_sibling())
+      end
+      assert.equals(22, vim.api.nvim_win_get_cursor(display.mid.winid)[1])
+      assert.equals(tallest, mid_height(display))
+    end)
+
+    it("applies min_items and max_height from config", function()
+      assert.equals(3, mid_height(open_with_items(1, { window = { min_items = 3 } })))
+      current:close()
+      assert.is_true(mid_height(open_with_items(50, { window = { max_height = "60%" } })) > 12)
+    end)
+
+    it("keeps min_items on a screen too short for max_height", function()
+      vim.o.lines = 12
+
+      assert.equals(5, mid_height(open_with_items(50)))
+    end)
+
+    it("counts every list, not only the focused one", function()
+      root = mock.make_tree({
+        {
+          name = "parent",
+          children = { { name = "a" }, { name = "b" }, { name = "c" }, { name = "d" }, { name = "e" }, { name = "f" } },
+        },
+      })
+      vim.api.nvim_buf_set_lines(source_buf, 0, -1, false, mock.source_lines(root))
+
+      assert.equals(6, mid_height(open(root.children[1])))
+    end)
+
+    it("resizes as navigation changes the lists and stays at the bottom", function()
+      root = mock.make_tree({
+        {
+          name = "parent",
+          children = {
+            { name = "a" },
+            { name = "b" },
+            { name = "c" },
+            { name = "d" },
+            { name = "e" },
+            { name = "f" },
+            { name = "g" },
+          },
+        },
+        { name = "second" },
+      })
+      vim.api.nvim_buf_set_lines(source_buf, 0, -1, false, mock.source_lines(root))
+      local display = open(root.children[2])
+      local bottom = bottom_row(display)
+      assert.equals(5, mid_height(display))
+
+      press(actions.previous_sibling())
+      assert.equals(7, mid_height(display))
+      assert.equals(bottom, bottom_row(display))
+
+      press(actions.next_sibling())
+      assert.equals(5, mid_height(display))
+      assert.equals(bottom, bottom_row(display))
+    end)
+
+    it("does not fit a fixed height", function()
+      local display = open_with_items(2, { window = { size = { height = 20 } } })
+
+      assert.equals(16, mid_height(display))
+    end)
+
+    it("removes variation selectors from names and the title", function()
+      local gear = "\226\154\153\239\184\143 Configuration"
+      local display = open_with_items(1)
+      root.children[1].name = gear
+      display:redraw()
+
+      local mid = panel_text(display.mid)
+      local title = panel_text(display.title)
+      assert_has(mid, "\226\154\153 Configuration")
+      assert_lacks(mid, "\239\184\143")
+      assert_lacks(title, "\239\184\143")
     end)
 
     it("applies a fixed window.size", function()
