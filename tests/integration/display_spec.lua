@@ -1131,6 +1131,27 @@ describe("display", function()
       assert.equals(display.right.bufnr, vim.api.nvim_win_get_buf(display.right.winid))
     end)
 
+    it("does not preview a leaf by default", function()
+      local display = open(root.children[2])
+
+      assert.equals(display.right.bufnr, vim.api.nvim_win_get_buf(display.right.winid))
+      assert.equals("", panel_text(display.right))
+    end)
+
+    it("previews a leaf with sections.right.preview = leaf", function()
+      local display = open(root.children[2], { window = { sections = { right = { preview = "leaf" } } } })
+
+      assert.equals(source_buf, vim.api.nvim_win_get_buf(display.right.winid))
+    end)
+
+    it("still enters preview focus with sections.right.preview = never", function()
+      local display = open(root.children[2], { window = { sections = { right = { preview = "never" } } } })
+
+      press(actions.children())
+
+      assert.equals(source_buf, vim.api.nvim_win_get_buf(display.right.winid))
+    end)
+
     it("opens with sections.right.preview = always", function()
       local display = open(root.children[1], { window = { sections = { right = { preview = "always" } } } })
 

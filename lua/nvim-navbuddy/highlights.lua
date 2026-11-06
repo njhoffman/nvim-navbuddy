@@ -9,8 +9,6 @@
 --- `NavbuddyNormalFloat` - Float normal highlight
 --- `NavbuddyNormalFloatDim` - Dimmed float normal (used in buffer focus mode)
 --- `NavbuddyFloatBorderDim` - Dimmed float border (used in buffer focus mode)
---- `NavbuddyTitleBorder` - Title bar border highlight
---- `NavbuddyNormalTitle` - Title bar normal highlight
 ---
 --- The following highlights are are used to highlight elements in the navbuddy
 --- window according to their type. If you have "NavicIcons<type>" highlights
@@ -93,121 +91,6 @@ local function darken(color, percent)
 end
 
 ---@private
----@param style BorderConfig
----@param section SectionName
----@return any
-local function get_border_chars(style, section)
-  if style == "default" then
-    style = "single"
-  end
-  if style ~= "single" and style ~= "rounded" and style ~= "double" and style ~= "solid" then
-    return style
-  end
-
-	-- stylua: ignore
-	local border_chars = {
-		top_left = {
-			single  = "┌",
-			rounded = "╭",
-			double  = "╔",
-			solid   = "▛",
-		},
-		top = {
-			single  = "─",
-			rounded = "─",
-			double  = "═",
-			solid   = "▀",
-		},
-		top_right = {
-			single  = "┐",
-			rounded = "╮",
-			double  = "╗",
-			solid   = "▜",
-		},
-		right = {
-			single  = "│",
-			rounded = "│",
-			double  = "║",
-			solid   = "▐",
-		},
-		bottom_right = {
-			single  = "┘",
-			rounded = "╯",
-			double  = "╝",
-			solid   = "▟",
-		},
-		bottom = {
-			single  = "─",
-			rounded = "─",
-			double  = "═",
-			solid   = "▄",
-		},
-		bottom_left = {
-			single  = "└",
-			rounded = "╰",
-			double  = "╚",
-			solid   = "▙",
-		},
-		left = {
-			single  = "│",
-			rounded = "│",
-			double  = "║",
-			solid   = "▌",
-		},
-		top_T = {
-			single  = "┬",
-			rounded = "┬",
-			double  = "╦",
-			solid   = "▛",
-		},
-		bottom_T = {
-			single  = "┴",
-			rounded = "┴",
-			double  = "╩",
-			solid   = "▙",
-		},
-		blank = "",
-	}
-
-  local border_chars_map = {
-    left = {
-      style = {
-        border_chars.top_left[style],
-        border_chars.top[style],
-        border_chars.top[style],
-        border_chars.blank,
-        border_chars.bottom[style],
-        border_chars.bottom[style],
-        border_chars.bottom_left[style],
-        border_chars.left[style],
-      },
-    },
-    mid = {
-      style = {
-        border_chars.top_T[style],
-        border_chars.top[style],
-        border_chars.top[style],
-        border_chars.blank,
-        border_chars.bottom[style],
-        border_chars.bottom[style],
-        border_chars.bottom_T[style],
-        border_chars.left[style],
-      },
-    },
-    right = {
-      border_chars.top_T[style],
-      border_chars.top[style],
-      border_chars.top_right[style],
-      border_chars.right[style],
-      border_chars.bottom_right[style],
-      border_chars.bottom[style],
-      border_chars.bottom_T[style],
-      border_chars.left[style],
-    },
-  }
-  return border_chars_map[section]
-end
----@private
 ---@param config Navbuddy.config
 local function highlight_setup(config)
   for lsp_num = 1, 26 do
@@ -276,14 +159,6 @@ local function highlight_setup(config)
     set_hl(0, "NavbuddyNormalFloat", { link = "NormalFloat" })
   end
 
-  if not hl_exists("NavbuddyTitleBorder") then
-    set_hl(0, "NavbuddyTitleBorder", { link = "FloatBorder" })
-  end
-
-  if not hl_exists("NavbuddyNormalTitle") then
-    set_hl(0, "NavbuddyNormalTitle", { link = "NormalFloat" })
-  end
-
   if not hl_exists("NavbuddyNormalFloatDim") then
     set_hl(0, "NavbuddyNormalFloatDim", { link = "Comment" })
   end
@@ -294,7 +169,6 @@ local function highlight_setup(config)
 end
 
 return {
-  get_border_chars = get_border_chars,
   get_color_from_hl = get_color_from_hl,
   darken = darken,
   setup = highlight_setup,

@@ -6,6 +6,21 @@ All notable changes to this fork are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-11-05
+
+### Changed
+
+- `window.sections.right.preview` now defaults to an explicit `"never"`, which matches how it already behaved. Pressing `l` on a leaf or `s` still shows a preview.
+
+### Fixed
+
+- The README and help file now show the actual defaults for `preview`, `t` and the help key.
+
+### Removed
+
+- The unfinished title-bar mode and other unused code: the `nvim-navbuddy.lsp`, `nvim-navbuddy.ui` and `nvim-navbuddy.display.title` modules, and `utils.get_layout_opts`.
+- The `NavbuddyTitleBorder` and `NavbuddyNormalTitle` highlights, which only that mode used. The title bar uses `NavbuddyNormalFloat` and `NavbuddyFloatBorder`.
+
 ## [0.2.4] - 2026-11-05
 
 ### Added

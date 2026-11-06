@@ -137,8 +137,8 @@ navbuddy.setup {
                 -- No size option for right most section. It fills to
                 -- remaining area.
                 border = nil,
-                preview = "leaf",  -- Right section can show previews too.
-                                   -- Options: "leaf", "always" or "never"
+                preview = "never", -- Right section can show previews too.
+                                   -- Options: "never", "leaf" or "always"
             }
         },
     },
@@ -225,17 +225,11 @@ navbuddy.setup {
         ["<C-v>"] = actions.vsplit(),       -- Open selected node in a vertical split
         ["<C-s>"] = actions.hsplit(),       -- Open selected node in a horizontal split
 
-        ["t"] = actions.telescope({         -- Fuzzy finder at current level.
-            layout_config = {               -- All options that can be
-                height = 0.60,              -- passed to telescope.nvim's
-                width = 0.60,               -- default can be passed here.
-                prompt_position = "top",
-                preview_width = 0.50
-            },
-            layout_strategy = "horizontal"
-        }),
+        ["t"] = actions.fuzzy_find(),       -- Fuzzy finder at current level, using
+                                            -- telescope.nvim or snacks.nvim. Options for
+                                            -- the picker can be passed here.
 
-        ["g?"] = actions.help(),            -- Open mappings help window
+        ["?"] = actions.help(),             -- Open mappings help window
     },
     lsp = {
         auto_attach = false,   -- If set to true, you don't need to manually use attach function

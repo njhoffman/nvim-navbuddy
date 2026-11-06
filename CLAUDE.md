@@ -54,7 +54,7 @@ Built on nui.nvim layouts:
 - **Left panel**: Parent nodes (ancestors) or buffer list when at root
 - **Mid panel**: Current node's siblings (active navigation target)
 - **Right panel**: Children / preview of selected node
-- **Title bar** (`display/title.lua`): Independent floating window showing breadcrumb path
+- **Title bar**: top popup in the same layout, showing the breadcrumb path built by `buffer/title.lua`
 
 ### Buffer Rendering (`buffer/`)
 Separate modules for different content types:
@@ -82,7 +82,7 @@ When pressing `l` on a leaf node (no children), the right pane shows source code
 - State tracked via `display.state.preview_focused` (boolean)
 
 ### State (`state.lua`)
-Global state: `mode`, `attached_clients` (map of LSP client IDs), `ns` (vim namespace for extmarks).
+Holds `ns`, the vim namespace for extmarks. Attached LSP clients are tracked in `init.lua`.
 
 ### Configuration (`config.lua`)
 Centralized defaults merged via `vim.tbl_deep_extend`. Key sections: `window.sections.{left,mid,right,title}`, `mappings`, `integrations.{telescope,snacks}`, `lsp.auto_attach`, `icons`.

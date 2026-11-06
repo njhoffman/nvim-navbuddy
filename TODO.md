@@ -83,7 +83,7 @@ Reviewed: 2026-11-05
 
 ## 2. Dead code and cleanup
 
-- [ ] **Remove unused modules.** (p2) [refactor] Nothing requires `lsp.lua`, `ui.lua` or `display/title.lua`, and none of them would work if called.
+- [x] **Remove unused modules.** (p2) [refactor] Nothing requires `lsp.lua`, `ui.lua` or `display/title.lua`, and none of them would work if called.
   `lsp.lua` uses an undefined global `config`. `display/title.lua:123-124` compares the nil return of `fill_title`. `ui.lua` duplicates `highlights.lua`, though `scripts/minidoc.lua` still reads it, so switch that first.
   Also unused: `state.mode`, `state.attached_clients`, `highlights.get_border_chars`, `utils.get_layout_opts` and its helpers (which the specs still cover), and the commented-out `focus_range` at `display/menu.lua:287-336`.
   Decide first whether the title-bar mode is worth finishing. If so, keep `display/title.lua` and turn this into a feature.
@@ -100,11 +100,11 @@ Reviewed: 2026-11-05
 - [ ] **Install snippets point to other repos.** (p2) [docs] README uses `SmiteshP/nvim-navbuddy` and `init.lua:35` uses `hasansujon786/nvim-navbuddy`, so following them installs a version without this fork's features.
   `.github/FUNDING.yml` also still names the upstream author, which may be intentional.
 - [ ] **Remove placeholder text from the README requirements.** (p3) [docs] `README.md:14-21` has a stray `**test**` heading and a nested "item one" list, and the section doesn't list `nvim-web-devicons` as optional.
-- [ ] **README config does not match the defaults.** (p2) [docs] It shows `preview = "leaf"`, but that line is commented out in `config.lua:100`, so preview is off by default. It also shows `t` as `actions.telescope` where the default is `fuzzy_find`.
+- [x] **README config does not match the defaults.** (p2) [docs] It shows `preview = "leaf"`, but that line is commented out in `config.lua:100`, so preview is off by default. It also shows `t` as `actions.telescope` where the default is `fuzzy_find`.
   Decide which `preview` default is intended; it interacts with preview focus mode.
 - [ ] **Help file omits fork features.** (p2) [docs] `doc/navbuddy.txt` has no mention of buffer focus mode, preview focus mode or the `*Dim` highlights, because it is generated from the stale `ui.lua`.
   Fix: point `scripts/minidoc.lua` at `highlights.lua`, document both modes, and regenerate.
-- [ ] **CLAUDE.md describes modules that are not wired in.** (p3) [docs] It presents `display/title.lua` as the title bar and `state.lua` as live global state, but the title popup is built in `display/menu.lua` and clients live in `init.lua`.
+- [x] **CLAUDE.md describes modules that are not wired in.** (p3) [docs] It presents `display/title.lua` as the title bar and `state.lua` as live global state, but the title popup is built in `display/menu.lua` and clients live in `init.lua`.
 - [ ] **Move the known-issues list out of `DEVELOPMENT_NOTES.md`.** (p3) [docs] Its "Known Issues / TODO" section duplicates this file. Replace it with a pointer here.
 
 ## 4. Tests and tooling

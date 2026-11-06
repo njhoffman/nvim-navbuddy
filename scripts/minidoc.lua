@@ -17,5 +17,5 @@ end
 MiniDoc.generate({
   "lua/nvim-navbuddy/init.lua",
   "lua/nvim-navbuddy/actions.lua",
-  "lua/nvim-navbuddy/ui.lua",
+  "lua/nvim-navbuddy/highlights.lua",
 }, "doc/navbuddy.txt", { hooks = hooks })

@@ -154,47 +154,4 @@ describe("highlights", function()
       assert.is_not_nil(cursor_line.link, "NavbuddyCursorLine should be a link")
     end)
   end)
-
-  describe("get_border_chars", function()
-    it("maps 'default' to 'single'", function()
-      local result = hl.get_border_chars("default", "left")
-      local single = hl.get_border_chars("single", "left")
-      assert.are.same(result, single)
-    end)
-
-    it("returns passthrough for unknown styles", function()
-      local result = hl.get_border_chars("custom_style", "left")
-      assert.equals("custom_style", result)
-    end)
-
-    it("returns 8-element array for left section", function()
-      local result = hl.get_border_chars("single", "left")
-      assert.equals(8, #result.style)
-    end)
-
-    it("returns 8-element array for mid section", function()
-      local result = hl.get_border_chars("single", "mid")
-      assert.equals(8, #result.style)
-    end)
-
-    it("returns 8-element array for right section", function()
-      local result = hl.get_border_chars("single", "right")
-      assert.equals(8, #result)
-    end)
-
-    it("returns correct single-style left border chars", function()
-      local result = hl.get_border_chars("single", "left")
-      assert.equals("\xe2\x94\x8c", result.style[1]) -- top_left: "┌"
-      assert.equals("\xe2\x94\x82", result.style[8]) -- left: "│"
-    end)
-
-    it("works for all known styles", function()
-      for _, style in ipairs({ "single", "rounded", "double", "solid" }) do
-        for _, section in ipairs({ "left", "mid", "right" }) do
-          local result = hl.get_border_chars(style, section)
-          assert.is_not_nil(result, style .. "/" .. section .. " returned nil")
-        end
-      end
-    end)
-  end)
 end)

@@ -156,7 +156,7 @@ node_markers: table
         right = {
           -- No size option for right most section. It fills to remaining area.
           border = nil,
-          preview = "leaf",  -- Options: "leaf"|"always"|"never"
+          preview = "never",  -- Options: "never"|"leaf"|"always"
                              -- "leaf": Right section can show previews too.
           win_options = nil,
         },
@@ -245,7 +245,7 @@ node_markers: table
 
       ["t"] = actions.fuzzy_find(),       -- Fuzzy finder at current level.
 
-      ["g?"] = actions.help(),            -- Show keymap help window
+      ["?"] = actions.help(),             -- Show keymap help window
     },
     lsp = {
       auto_attach = false,   -- If set to true, you don't need to manually use attach function

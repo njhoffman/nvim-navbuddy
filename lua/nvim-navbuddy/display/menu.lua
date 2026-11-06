@@ -134,7 +134,6 @@ function display:new(obj)
       local cursor_pos = vim.api.nvim_win_get_cursor(obj.mid.winid)
       if obj.focus_node ~= obj.focus_node.parent.children[cursor_pos[1]] then
         obj.focus_node = obj.focus_node.parent.children[cursor_pos[1]]
-        -- obj.layout:update(utils.get_layout_opts(obj.focus_node))
         obj:redraw()
       end
 
@@ -256,57 +255,6 @@ function display:focus_range()
   end
 end
 
--- function display:focus_range()
---   local ranges = nil
---
---   if vim.deep_equal(self.focus_node.scope, self.focus_node.name_range) then
---     ranges = { { 'NavbuddyScope', self.focus_node.scope } }
---   else
---     ranges = { { 'NavbuddyScope', self.focus_node.scope }, { 'NavbuddyName', self.focus_node.name_range } }
---   end
---
---   if self.config.source_buffer.highlight then
---     for _, v in ipairs(ranges) do
---       local highlight, range = unpack(v)
---
---       if range['start'].line == range['end'].line then
---         vim.api.nvim_buf_add_highlight(
---           self.for_buf,
---           state.ns,
---           highlight,
---           range['start'].line - 1,
---           range['start'].character,
---           range['end'].character
---         )
---       else
---         vim.api.nvim_buf_add_highlight(
---           self.for_buf,
---           state.ns,
---           highlight,
---           range['start'].line - 1,
---           range['start'].character,
---           -1
---         )
---         vim.api.nvim_buf_add_highlight(
---           self.for_buf,
---           state.ns,
---           highlight,
---           range['end'].line - 1,
---           0,
---           range['end'].character
---         )
---         for i = range['start'].line, range['end'].line - 2, 1 do
---           vim.api.nvim_buf_add_highlight(self.for_buf, state.ns, highlight, i, 0, -1)
---         end
---       end
---     end
---   end
---
---   if self.config.source_buffer.follow_node then
---     self:reorient(self.for_win, self.config.source_buffer.reorient)
---   end
--- end
-
 function display:reorient(ro_win, reorient_method)
   vim.api.nvim_win_set_cursor(
     ro_win,
@@ -349,12 +297,6 @@ function display:show_preview()
   vim.api.nvim_set_option_value("wrap", false, { win = self.right.winid })
   if self.winblend then
     vim.wo[self.right.winid].winblend = self.winblend
-    -- else
-    --   vim.api.nvim_win_set_option(
-    --     self.right.winid,
-    --     "winhighlight",
-    --     "Normal:NavbuddyNormalFloat,FloatBorder:NavbuddyFloatBorder"
-    --   )
   end
 
   self:reorient(self.right.winid, "smart")
@@ -403,7 +345,6 @@ function display:redraw()
   end
 
   if node.parent.is_root then
-    -- buffer.clear(self.left)
     local buf_utils = require("nvim-navbuddy.buffer.utils")
     self.state.buffer_list = buf_utils.get_current_buffers(self.for_buf)
     buffer.fill_files(self.left, self.for_buf, self.config)

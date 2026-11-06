@@ -50,7 +50,6 @@ lua/nvim-navbuddy/
 ├── Display (Refactored)
 │   ├── display.lua       - Dispatcher (26 lines) → display/menu.lua
 │   ├── display/menu.lua  - Main navigation interface (459 lines)
-│   └── display/title.lua - Independent title bar (138 lines)
 │
 ├── Buffer System (Custom)
 │   ├── buffer/init.lua   - Module exports
@@ -113,8 +112,8 @@ navic.request_symbol(bufnr, callback, client)
 
 ### Custom Features Active
 
-1. **Independent Title Bar** (`display/title.lua`)
-   - Floating at bottom, configurable via `config.window.sections.title`
+1. **Title Bar** (`display/menu.lua`)
+   - Top popup in the layout, configurable via `config.window.sections.title`
 
 2. **Smart Title Truncation** (`buffer/title.lua`)
    - Builds full node chain, truncates with `…` based on window width
@@ -174,7 +173,7 @@ make test-integration  # Integration tests only (setup, actions, buffer focus)
 Tests use plenary.nvim (busted-style `describe`/`it`). Dependencies are cloned into `deps/` (gitignored).
 
 **Test structure:**
-- `tests/unit/highlights_spec.lua` -- clamp_color, to_rgb, darken, get_border_chars
+- `tests/unit/highlights_spec.lua` -- clamp_color, to_rgb, darken
 - `tests/unit/border_spec.lua` -- border char generation for all style/section combos
 - `tests/unit/utils_spec.lua` -- get_size, apply_bounds, get_dimensions, check_integration
 - `tests/unit/title_spec.lua` -- node_chain_length calculation

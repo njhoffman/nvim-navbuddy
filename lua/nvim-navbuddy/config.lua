@@ -97,7 +97,7 @@ local config = {
         },
       },
       right = {
-        -- preview = 'leaf',
+        preview = "never", -- "never", "leaf" or "always"
         border = nil,
         win_options = nil
       },
