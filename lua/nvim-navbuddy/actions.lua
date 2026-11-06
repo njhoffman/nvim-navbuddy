@@ -251,7 +251,9 @@ function actions.select()
 end
 
 --- Yank the name of current node.
-function actions.yank_name()
+---@param opts? { register?: string } Register to yank to. Default: "+"
+function actions.yank_name(opts)
+  local register = opts and opts.register or "+"
   local callback = function(display)
     display:close()
     fix_end_character_position(display.for_buf, display.focus_node.name_range)
@@ -264,7 +266,7 @@ function actions.yank_name()
       display.for_win,
       { display.focus_node.name_range["end"].line, display.focus_node.name_range["end"].character - 1 }
     )
-    vim.api.nvim_command('normal! "+y')
+    vim.api.nvim_command('normal! "' .. register .. "y")
   end
 
   return {
@@ -274,7 +276,9 @@ function actions.yank_name()
 end
 
 --- Yank the scope of current node.
-function actions.yank_scope()
+---@param opts? { register?: string } Register to yank to. Default: "+"
+function actions.yank_scope(opts)
+  local register = opts and opts.register or "+"
   local callback = function(display)
     display:close()
     fix_end_character_position(display.for_buf, display.focus_node.scope)
@@ -287,7 +291,7 @@ function actions.yank_scope()
       display.for_win,
       { display.focus_node.scope["end"].line, display.focus_node.scope["end"].character - 1 }
     )
-    vim.api.nvim_command('normal! "+y')
+    vim.api.nvim_command('normal! "' .. register .. "y")
   end
 
   return {

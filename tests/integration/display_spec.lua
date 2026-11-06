@@ -488,6 +488,54 @@ describe("display", function()
       assert.equals(bottom, bottom_row(display))
     end)
 
+    it("keeps win_options set on a section through redraws and previews", function()
+      local display = open(root.children[1], { window = { sections = { right = { win_options = { wrap = true } } } } })
+      display:redraw()
+      assert.is_false(vim.wo[display.mid.winid].wrap)
+      assert.is_true(vim.wo[display.right.winid].wrap)
+
+      display:show_preview()
+      assert.is_false(vim.wo[display.right.winid].wrap)
+      display:hide_preview()
+      assert.is_true(vim.wo[display.right.winid].wrap)
+    end)
+
+    it("builds the buffer list once per redraw", function()
+      local display = open(root.children[1])
+      local buf_utils = require("nvim-navbuddy.buffer.utils")
+      local saved = buf_utils.get_current_buffers
+      local calls = 0
+      buf_utils.get_current_buffers = function(...)
+        calls = calls + 1
+        return saved(...)
+      end
+
+      display:redraw()
+      buf_utils.get_current_buffers = saved
+
+      assert.equals(1, calls)
+    end)
+
+    it("fills the title without options", function()
+      local display = open(root.children[1])
+
+      require("nvim-navbuddy.buffer").fill_title(display.title, display.focus_node, display.config)
+
+      assert_has(panel_text(display.title), display.focus_node.name)
+    end)
+
+    it("yanks to the register given to the action", function()
+      local display = open(root.children[1])
+      local name = display.focus_node.name
+
+      press(actions.yank_name({ register = "a" }))
+      assert.equals(name, vim.fn.getreg("a"))
+
+      display = open(root.children[1])
+      press(actions.yank_scope({ register = "b" }))
+      assert_has(vim.fn.getreg("b"), name)
+    end)
+
     it("renames the focused node when the source cursor did not follow it", function()
       local display = open(root.children[1], { source_buffer = { follow_node = false } })
       press(actions.next_sibling())

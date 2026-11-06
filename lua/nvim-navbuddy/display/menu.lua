@@ -25,6 +25,8 @@ local function section_popup(config, section, opts)
 
   local win_options = vim.tbl_extend("force", {
     wrap = false,
+    signcolumn = "no",
+    foldlevel = 100,
     cursorline = false,
     winhighlight = NORMAL_WINHIGHLIGHT,
     winblend = config.window.winblend,
@@ -39,6 +41,11 @@ local function section_popup(config, section, opts)
   })
   popup.panel = section
   popup.normal_winhighlight = win_options.winhighlight
+  popup.preview_restore_options = {
+    wrap = win_options.wrap,
+    signcolumn = win_options.signcolumn,
+    foldlevel = win_options.foldlevel,
+  }
   return popup
 end
 
@@ -320,7 +327,6 @@ function display:show_preview()
 end
 
 function display:hide_preview()
-  vim.api.nvim_win_set_buf(self.right.winid, self.right.bufnr)
   local node = self.focus_node
   if node.children then
     if node.memory then
@@ -364,7 +370,7 @@ function display:redraw()
   if node.parent.is_root then
     local buf_utils = require("nvim-navbuddy.buffer.utils")
     self.state.buffer_list = buf_utils.get_current_buffers(self.for_buf)
-    buffer.fill_files(self.left, self.for_buf, self.config)
+    buffer.fill_files(self.left, self.for_buf, self.config, self.state.buffer_list)
     self.state.in_buffer_list = true
   else
     buffer.fill_lsp(self.left, node.parent, self.config)

@@ -6,6 +6,21 @@ All notable changes to this fork are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-06
+
+### Added
+
+- `actions.yank_name` and `actions.yank_scope` take a register, as in `actions.yank_name({ register = "a" })`. The default is still `+`.
+
+### Changed
+
+- Lists no longer wrap by default. Before, Navbuddy turned `wrap` on at each redraw regardless of the section's `win_options`.
+
+### Fixed
+
+- `wrap`, `signcolumn` and `foldlevel` in a section's `win_options` are kept through redraws and restored after a preview.
+- The buffer title can be filled without options, instead of raising an error.
+
 ## [0.5.0] - 2026-11-06
 
 ### Changed

@@ -2,11 +2,11 @@ local state = require("nvim-navbuddy.state")
 local buf_utils = require("nvim-navbuddy.buffer.utils")
 local highlights = require("nvim-navbuddy.highlights")
 
-local function fill_files(buf, active_bufnr, config)
+local function fill_files(buf, active_bufnr, config, curbufs)
   local lines = {}
 
   local active_buf = { idx = nil, hl = nil }
-  local curbufs = buf_utils.get_current_buffers(active_bufnr)
+  curbufs = curbufs or buf_utils.get_current_buffers(active_bufnr)
   for i, curbuf in ipairs(curbufs) do
     local text = " " .. (curbuf.display[1].text or "") .. " " .. (curbuf.display[2].text or "")
     if curbuf.data.current then
@@ -20,6 +20,7 @@ local function fill_files(buf, active_bufnr, config)
   vim.api.nvim_buf_set_lines(buf.bufnr, 0, -1, false, lines)
   vim.bo[buf.bufnr].modifiable = false
 
+  local dimmed = {}
   for i, curbuf in ipairs(curbufs) do
     if config.theme == "hl-line" then
       local hl_group = curbuf.display[1].hl
@@ -28,10 +29,14 @@ local function fill_files(buf, active_bufnr, config)
           vim.dbglog("ERROR curbuf", curbuf)
         end
       else
-        local file_hl = highlights.get_color_from_hl(hl_group)
-        if file_hl.foreground then
-          local hldark = { fg = highlights.darken(file_hl.foreground, 50) }
-          vim.api.nvim_set_hl(0, hl_group .. "Dim", hldark)
+        if dimmed[hl_group] == nil then
+          local file_hl = highlights.get_color_from_hl(hl_group)
+          dimmed[hl_group] = file_hl.foreground ~= nil
+          if file_hl.foreground then
+            vim.api.nvim_set_hl(0, hl_group .. "Dim", { fg = highlights.darken(file_hl.foreground, 50) })
+          end
+        end
+        if dimmed[hl_group] then
           hl_group = hl_group .. "Dim"
         end
         require("nvim-navbuddy.hl").add_highlight(buf.bufnr, state.ns, hl_group, i - 1, 0, -1)

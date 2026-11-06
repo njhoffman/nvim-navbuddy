@@ -1,2 +1,3 @@
 doc/tags
 deps/
+.claude/settings.local.json

@@ -74,11 +74,13 @@ local merge = function(...)
 end
 
 local function clear_buffer(buf)
-  vim.api.nvim_win_set_buf(buf.winid, buf.bufnr)
-
-  vim.wo[buf.winid].signcolumn = "no"
-  vim.wo[buf.winid].foldlevel = 100
-  vim.wo[buf.winid].wrap = true
+  if vim.api.nvim_win_get_buf(buf.winid) ~= buf.bufnr then
+    -- Leaving a preview, which sets its own options on this window
+    vim.api.nvim_win_set_buf(buf.winid, buf.bufnr)
+    for name, value in pairs(buf.preview_restore_options or {}) do
+      vim.wo[buf.winid][name] = value
+    end
+  end
 
   vim.bo[buf.bufnr].modifiable = true
   vim.api.nvim_buf_set_lines(buf.bufnr, 0, -1, false, {})

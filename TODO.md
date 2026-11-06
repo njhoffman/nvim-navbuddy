@@ -50,7 +50,7 @@ Reviewed: 2026-11-05
   Fix: build the layout from config, and decide whether the commented-out `utils.get_layout_opts` sizing is still wanted.
 - [x] **Help window is smaller with the new default size.** (p2) [bug] `actions.help` uses `window.size` and `window.position`, which now default to 80x15 at `98%`, so the mappings list needs scrolling.
   Fix: give help its own size, large enough for the mapping count and centered.
-- [ ] **`wrap` in a section's `win_options` is overwritten.** (p3) [bug] `clear_buffer` sets `wrap = true` on each redraw (`buffer/utils.lua:81`), and also `signcolumn` and `foldlevel`.
+- [x] **`wrap` in a section's `win_options` is overwritten.** (p3) [bug] `clear_buffer` sets `wrap = true` on each redraw (`buffer/utils.lua:81`), and also `signcolumn` and `foldlevel`.
   Fix: stop setting these on every fill, and restore them only after a preview.
 - [x] **`:Navbuddy` does not exist until `setup()` runs.** (p2) [bug] The README's `attach`-only flow ends in an unknown command.
   Reproduced: `exists(":Navbuddy")` is 0 after `require`, and the repo has no `plugin/` directory.
@@ -73,12 +73,12 @@ Reviewed: 2026-11-05
   `buffer/lsp.lua:15-19` and `buffer/title.lua:47-57` use `#` and `string.sub`.
   `string.rep("", indent, " ")` at `title.lua:92` returns one space fewer than `indent`, so the title highlights are off by one. Should be `string.rep(" ", indent)`.
   Fix: use `vim.fn.strdisplaywidth` and `vim.fn.strcharpart`.
-- [ ] **`fill_title` default options crash.** (p3) [bug] The default `opts` has no `winsize`, so `opts.winsize.w` errors, and the fallback passes a popup where a window id is needed (`buffer/title.lua:25-29`).
+- [x] **`fill_title` default options crash.** (p3) [bug] The default `opts` has no `winsize`, so `opts.winsize.w` errors, and the fallback passes a popup where a window id is needed (`buffer/title.lua:25-29`).
   Only reachable by callers that omit `opts`.
 - [x] **`r` can rename the wrong symbol.** (p3) [bug] `actions.rename` relies on `follow_node` having moved the cursor (`actions.lua:432-436`).
   With `follow_node = false` the rename applies to the symbol at the original cursor.
   Fix: set the cursor to the focused node's name first.
-- [ ] **Yank always targets the `+` register.** (p3) [feature] `yank_name` and `yank_scope` hardcode `"+y` (`actions.lua:267`, `:290`), which depends on a clipboard provider.
+- [x] **Yank always targets the `+` register.** (p3) [feature] `yank_name` and `yank_scope` hardcode `"+y` (`actions.lua:267`, `:290`), which depends on a clipboard provider.
   Fix: accept a register option, defaulting to `v:register` or the current behavior.
 
 ## 2. Dead code and cleanup
@@ -87,11 +87,11 @@ Reviewed: 2026-11-05
   `lsp.lua` uses an undefined global `config`. `display/title.lua:123-124` compares the nil return of `fill_title`. `ui.lua` duplicates `highlights.lua`, though `scripts/minidoc.lua` still reads it, so switch that first.
   Also unused: `state.mode`, `state.attached_clients`, `highlights.get_border_chars`, `utils.get_layout_opts` and its helpers (which the specs still cover), and the commented-out `focus_range` at `display/menu.lua:287-336`.
   Decide first whether the title-bar mode is worth finishing. If so, keep `display/title.lua` and turn this into a feature.
-- [ ] **Avoid repeated work on each redraw.** (p3) [perf] `get_current_buffers` runs twice per top-level redraw (`display/menu.lua:440`, `buffer/file.lua:9`), and `nvim_set_hl` runs per listed buffer (`file.lua:31`).
+- [x] **Avoid repeated work on each redraw.** (p3) [perf] `get_current_buffers` runs twice per top-level redraw (`display/menu.lua:440`, `buffer/file.lua:9`), and `nvim_set_hl` runs per listed buffer (`file.lua:31`).
   Fix: pass the list through and define `*Dim` groups once.
 - [ ] **Consolidate repeated action code.** (p3) [refactor] Cursor placement and visual selection repeat across about ten actions, and the reorient logic is duplicated between `actions.select` and `display:reorient`.
   Fix: extract helpers before adding more actions.
-- [ ] **Stop tracking `.claude/settings.local.json`.** (p3) [chore] It is a machine-local permission file. Add it to `.gitignore` and untrack it.
+- [x] **Stop tracking `.claude/settings.local.json`.** (p3) [chore] It is a machine-local permission file. Add it to `.gitignore` and untrack it.
 
 ## 3. Documentation
 
@@ -105,7 +105,7 @@ Reviewed: 2026-11-05
 - [x] **Help file omits fork features.** (p2) [docs] `doc/navbuddy.txt` has no mention of buffer focus mode, preview focus mode or the `*Dim` highlights, because it is generated from the stale `ui.lua`.
   Fix: point `scripts/minidoc.lua` at `highlights.lua`, document both modes, and regenerate.
 - [x] **CLAUDE.md describes modules that are not wired in.** (p3) [docs] It presents `display/title.lua` as the title bar and `state.lua` as live global state, but the title popup is built in `display/menu.lua` and clients live in `init.lua`.
-- [ ] **Move the known-issues list out of `DEVELOPMENT_NOTES.md`.** (p3) [docs] Its "Known Issues / TODO" section duplicates this file. Replace it with a pointer here.
+- [x] **Move the known-issues list out of `DEVELOPMENT_NOTES.md`.** (p3) [docs] Its "Known Issues / TODO" section duplicates this file. Replace it with a pointer here.
 
 ## 4. Tests and tooling
 

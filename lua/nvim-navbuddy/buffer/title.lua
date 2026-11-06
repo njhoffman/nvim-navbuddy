@@ -23,11 +23,11 @@ local function fill_title(buf, focus_node, config, opts)
   -- local sfx = navic.adapt_lsp_num_to_str(focus_node.kind)
   -- local hls = { { "Navbuddy" .. sfx, 1, 3 } }
   buf_utils.clear_buffer(buf)
-  opts = opts or { align = "left", separator = "  " }
+  opts = vim.tbl_extend("keep", opts or {}, { align = "left", separator = "  " })
   local node_chain = { focus_node }
   local parent_node = focus_node.parent
 
-  local winwidth = opts.winsize.w or vim.api.nvim_win_get_width(buf)
+  local winwidth = opts.winsize and opts.winsize.w or vim.api.nvim_win_get_width(buf.winid)
 
   while type(parent_node) ~= "nil" and type(parent_node.name) ~= "nil" do
     table.insert(node_chain, parent_node)
