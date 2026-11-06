@@ -1,10 +1,17 @@
-local root = vim.fn.fnamemodify(debug.getinfo(1, "S").source:sub(2), ":h:h")
+local root = vim.fn.fnamemodify(debug.getinfo(1, "S").source:sub(2), ":p:h:h")
 local deps = root .. "/deps"
 
-vim.opt.rtp:prepend(root)
-vim.opt.rtp:prepend(deps .. "/plenary.nvim")
-vim.opt.rtp:prepend(deps .. "/nvim-navic")
-vim.opt.rtp:prepend(deps .. "/nui.nvim")
+-- Only the plugin, its test dependencies and Neovim's own runtime: nothing from
+-- the user's config, data directories or packages.
+vim.o.runtimepath = table.concat({
+  root,
+  deps .. "/plenary.nvim",
+  deps .. "/nvim-navic",
+  deps .. "/nui.nvim",
+  vim.env.VIMRUNTIME,
+}, ",")
+vim.o.packpath = ""
 
 vim.opt.swapfile = false
+vim.o.shadafile = "NONE"
 vim.cmd("runtime plugin/plenary.vim")

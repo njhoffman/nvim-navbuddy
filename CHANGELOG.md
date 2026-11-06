@@ -6,6 +6,20 @@ All notable changes to this fork are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-11-05
+
+### Added
+
+- GitHub Actions workflow that runs the tests on Neovim 0.10, stable and nightly, and checks formatting.
+
+### Changed
+
+- Tests run against pinned dependency commits and no longer see your own Neovim config.
+
+### Removed
+
+- Use of `vim.lsp.get_buffers_by_client_id` and `nvim_buf_clear_highlight`, so `lsp.auto_attach` no longer shows a deprecation warning on Neovim 0.13.
+
 ## [0.2.3] - 2026-11-05
 
 ### Changed

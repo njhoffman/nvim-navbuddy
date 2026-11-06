@@ -372,9 +372,7 @@ function navbuddy.setup(user_config)
     end, all_clients)
 
     for _, client in ipairs(supported_clients) do
-      local buffers_of_client = vim.lsp.get_buffers_by_client_id(client.id)
-
-      for _, buffer_number in ipairs(buffers_of_client) do
+      for buffer_number in pairs(client.attached_buffers) do
         navbuddy.attach(client, buffer_number)
       end
     end

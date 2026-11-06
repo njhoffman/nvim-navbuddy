@@ -67,7 +67,7 @@ Reviewed: 2026-11-05
 - [x] **VimResized autocmds leak on every open.** (p2) [bug] `buffer = self.forbuf` is a misspelled field, so it is nil and the autocmd is global (`display/menu.lua:175-178`).
   Only buffer-local autocmds are cleared, so one more accumulates per open, and each keeps its display object alive.
   Fix: delete the autocmd in `close()`, or use a per-display augroup.
-- [ ] **Remaining deprecated APIs.** (p2) [chore] `vim.lsp.get_buffers_by_client_id` (`init.lua:343`) is deprecated for removal in 0.13, and `nvim_buf_clear_highlight` remains at `display/menu.lua:410`.
+- [x] **Remaining deprecated APIs.** (p2) [chore] `vim.lsp.get_buffers_by_client_id` (`init.lua:343`) is deprecated for removal in 0.13, and `nvim_buf_clear_highlight` remains at `display/menu.lua:410`.
   Fix: use `client.attached_buffers` and `nvim_buf_clear_namespace`.
 - [x] **Title and list widths use byte counts.** (p2) [bug] Multibyte names and icons get wrong padding, can be cut mid-character, and the title centers off target.
   `buffer/lsp.lua:15-19` and `buffer/title.lua:47-57` use `#` and `string.sub`.
@@ -112,12 +112,12 @@ Reviewed: 2026-11-05
 - [x] **Test the real display.** (p1) [test] `actions_spec` stubs every display method, so `display/menu.lua` has no coverage, and all 80 specs pass with the crashes above present.
   Added `tests/integration/display_spec.lua`, which mounts the real layout, and made `tests/helpers/mock_nodes.lua` match navic's nameless root and give nodes real line ranges.
   Remaining known bugs are `pending` specs. Each fix should change its spec to `it`.
-- [ ] **Isolate the test runtime.** (p2) [test] `tests/minimal_init.lua` only prepends to `rtp`, so `~/.config/nvim` stays visible and supplies `nvim-web-devicons` to the specs.
+- [x] **Isolate the test runtime.** (p2) [test] `tests/minimal_init.lua` only prepends to `rtp`, so `~/.config/nvim` stays visible and supplies `nvim-web-devicons` to the specs.
   Fix: reset `rtp` to `$VIMRUNTIME` plus `deps/`, or run with temporary `XDG_*` directories.
 - [ ] **Single-spec runs fail on module loading.** (p3) [test] `PlenaryBustedFile tests/unit/title_spec.lua` fails with `module 'nvim-navic.lib' not found`, although `require` works under the same `-u tests/minimal_init.lua`.
   `PlenaryBustedDirectory`, which the Makefile uses, is not affected. Cause not yet found.
   Fix: find the cause, then add a `make test-file FILE=...` target.
-- [ ] **Add CI.** (p2) [chore] `.github/` only holds `FUNDING.yml`, so nothing runs tests or format checks on push.
+- [x] **Add CI.** (p2) [chore] `.github/` only holds `FUNDING.yml`, so nothing runs tests or format checks on push.
   Fix: a GitHub Actions matrix covering the minimum supported Neovim, stable and nightly. Pin `deps/` to known commits, since `make deps` clones whatever is on the default branch.
 - [ ] **Add format, lint and docs targets.** (p3) [chore] The Makefile only covers tests, `stylua --check lua/` reports 10 files, and luacheck reports 300 warnings with no `.luacheckrc`.
   `scripts/minidoc.lua` needs `mini.doc`, which `make deps` does not fetch.

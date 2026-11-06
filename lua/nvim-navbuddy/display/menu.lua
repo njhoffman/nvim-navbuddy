@@ -375,7 +375,7 @@ function display:hide_preview()
 end
 
 function display:clear_highlights()
-  vim.api.nvim_buf_clear_highlight(self.for_buf, state.ns, 0, -1)
+  vim.api.nvim_buf_clear_namespace(self.for_buf, state.ns, 0, -1)
 end
 
 function display:redraw()
