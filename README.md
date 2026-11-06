@@ -272,9 +272,11 @@ When navigating to the root level (press `0`), the left panel shows open buffers
 Pressing `h` at root enters **buffer focus mode**:
 
 - Mid and right panels are dimmed
-- `j`/`k` navigates the buffer list and **live-switches** the active buffer
+- `j`/`k` navigates the buffer list and **live-switches** the active buffer once its symbols arrive
+- Buffers with no LSP server or no symbols stay in the list but are not switched to
 - `l` exits buffer focus mode and returns to normal navigation
-- `h` again confirms the selection
+- `h` again confirms the selection, so closing Navbuddy stays on that buffer
+- Closing with `q` or `<esc>` without confirming returns to the original buffer and cursor
 
 ### Preview Focus Mode
 

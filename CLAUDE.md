@@ -69,7 +69,8 @@ All navigation callbacks follow a pattern: return `{ callback = function(display
 ### Buffer Focus Mode (`display/menu.lua`)
 When at root level with the buffer list visible, pressing `h` enters "buffer focus mode":
 - `enter_buffer_focus()` dims mid/right panes via `NavbuddyNormalFloatDim` winhighlight, enables cursorline on left pane
-- `j`/`k` navigates the buffer list AND live-switches the active buffer (calls `select_buffer()`)
+- `j`/`k` navigates the buffer list AND live-switches the active buffer (calls `select_buffer()`); the switch commits only when the target's symbols arrive, and newer selections or closing drop responses still in flight
+- `h` confirms the buffer; otherwise the close action restores `start_buf` and `start_cursor` via `restore_start()`
 - `l` calls `exit_buffer_focus()` to restore pane appearance and return to normal navigation
 - State tracked via `display.state.buffer_focused` (boolean)
 

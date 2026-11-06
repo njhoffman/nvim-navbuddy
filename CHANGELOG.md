@@ -6,6 +6,22 @@ All notable changes to this fork are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-05
+
+### Changed
+
+- Closing with `q` or `<esc>` after live-switching returns to the original buffer and cursor. Press `h` in buffer focus mode to keep the new buffer.
+- With several LSP servers attached and no matching `lsp.preference`, `:Navbuddy` now shows the server chooser, as documented. Before, it used whichever server attached last.
+
+### Fixed
+
+- A second LSP server no longer replaces the first in Navbuddy's list, so `lsp.preference` and the chooser see every attached server.
+- When a server detaches, Navbuddy removes that server rather than the one attached most recently.
+- Live buffer switching now requests symbols for the selected buffer rather than the Navbuddy window, so it works with real LSP servers.
+- A switch only happens once the selected buffer's symbols arrive. Buffers with no LSP server or no symbols are left in the list without being switched to, and late responses are ignored.
+- After a switch, the LSP name and source highlights follow the new buffer, and `lsp.preference` chooses the server.
+- `<enter>` and the split actions no longer fail or use the wrong cursor position after a switch.
+
 ## [0.1.1] - 2026-11-05
 
 ### Added

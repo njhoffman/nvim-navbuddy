@@ -393,8 +393,8 @@ function navbuddy.attach(client, bufnr)
   end
 
   -- Check for stopped lsp servers
-  for i, c in ipairs(navbuddy_attached_clients[bufnr]) do
-    if c.is_stopped then
+  for i = #navbuddy_attached_clients[bufnr], 1, -1 do
+    if navbuddy_attached_clients[bufnr][i]:is_stopped() then
       table.remove(navbuddy_attached_clients[bufnr], i)
     end
   end
@@ -415,10 +415,10 @@ function navbuddy.attach(client, bufnr)
     buffer = bufnr,
   })
   vim.api.nvim_create_autocmd("LspDetach", {
-    callback = function()
+    callback = function(args)
       if navbuddy_attached_clients[bufnr] ~= nil then
         for i, c in ipairs(navbuddy_attached_clients[bufnr]) do
-          if c.id == client.id then
+          if c.id == args.data.client_id then
             table.remove(navbuddy_attached_clients[bufnr], i)
             break
           end

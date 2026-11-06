@@ -20,11 +20,11 @@ local function fix_end_character_position(bufnr, name_range_or_scope)
   end
 end
 
---- Close the Navbuddy window and return cursor to original location.
+--- Close the Navbuddy window and return to the original buffer and cursor.
 function actions.close()
   local callback = function(display)
     display:close()
-    vim.api.nvim_win_set_cursor(display.for_win, display.start_cursor)
+    display:restore_start()
   end
 
   return {
@@ -130,7 +130,7 @@ function actions.parent()
         if not display.state.buffer_focused then
           display:enter_buffer_focus()
         else
-          display:select_buffer()
+          display:select_buffer({ confirm = true })
         end
       end
       return
@@ -212,9 +212,12 @@ function actions.select()
     fix_end_character_position(display.for_buf, display.focus_node.name_range)
     fix_end_character_position(display.for_buf, display.focus_node.scope)
     -- to push location to jumplist:
-    -- move display to start_cursor, set mark ', then move to new location
-    vim.api.nvim_win_set_cursor(display.for_win, display.start_cursor)
+    -- move display to start position, set mark ', then move to new location
+    display:restore_start()
     vim.api.nvim_command("normal! m'")
+    if vim.api.nvim_win_get_buf(display.for_win) ~= display.for_buf then
+      vim.api.nvim_win_set_buf(display.for_win, display.for_buf)
+    end
     vim.api.nvim_win_set_cursor(
       display.for_win,
       { display.focus_node.name_range["start"].line, display.focus_node.name_range["start"].character }

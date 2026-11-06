@@ -25,7 +25,7 @@ local TREE = {
 
 describe("display", function()
   local source_buf, source_win, root, current
-  local saved_guicursor, saved_notify
+  local saved_guicursor, saved_notify, notifications
 
   local function new_config(overrides)
     package.loaded["nvim-navbuddy.config"] = nil
@@ -89,7 +89,10 @@ describe("display", function()
   before_each(function()
     saved_guicursor = vim.o.guicursor
     saved_notify = vim.notify
-    vim.notify = function() end
+    notifications = {}
+    vim.notify = function(message)
+      table.insert(notifications, message)
+    end
 
     vim.api.nvim_set_hl(0, "NavbuddySpecIcon", { fg = "#808080" })
     package.preload["nvim-web-devicons"] = nil
@@ -420,25 +423,351 @@ describe("display", function()
       assert.equals(source_buf, vim.api.nvim_win_get_buf(source_win))
     end)
 
-    it("live-switches the source window while moving through the list", function()
-      local other = add_listed_buffer("navbuddy_spec_other.lua")
+    it("does not switch to a buffer with no LSP", function()
       local display = open(root.children[1])
+      add_listed_buffer("navbuddy_spec_other.lua")
 
       press(actions.parent())
+      display:redraw()
       press(actions.next_sibling())
 
       assert.equals(2, vim.api.nvim_win_get_cursor(display.left.winid)[1])
-      assert.equals(other, vim.api.nvim_win_get_buf(source_win))
+      assert.equals(source_buf, vim.api.nvim_win_get_buf(source_win))
+      assert.equals(source_buf, display.for_buf)
+      assert.equals("first", display.focus_node.name)
+      assert.equals("No LSP server attached to buffer", notifications[1])
     end)
 
-    pending("keeps for_buf and the source window consistent when the target has no LSP", function()
-      add_listed_buffer("navbuddy_spec_other.lua")
-      local display = open(root.children[1])
+    describe("with an LSP server", function()
+      local requests, held, hold_responses, symbols_by_buf, clients
+      local other, third_buf
 
-      press(actions.parent())
-      press(actions.next_sibling())
+      local function symbols_for(names)
+        local symbols = {}
+        for i, name in ipairs(names) do
+          local first = (i - 1) * 2
+          local range = { start = { line = first, character = 0 }, ["end"] = { line = first + 1, character = 1 } }
+          local selection = { start = { line = first, character = 0 }, ["end"] = { line = first, character = #name } }
+          table.insert(symbols, { name = name, kind = 12, range = range, selectionRange = selection })
+        end
+        return symbols
+      end
 
-      assert.equals(display.for_buf, vim.api.nvim_win_get_buf(source_win))
+      local function lines_for(names)
+        local lines = {}
+        for _, name in ipairs(names) do
+          table.insert(lines, name .. " {")
+          table.insert(lines, "}")
+        end
+        return lines
+      end
+
+      local function server(dispatchers)
+        return {
+          request = function(method, params, callback)
+            if method == "initialize" then
+              callback(nil, { capabilities = { documentSymbolProvider = true } })
+            elseif method == "textDocument/documentSymbol" then
+              local uri = params.textDocument.uri
+              table.insert(requests, uri)
+              local function respond()
+                callback(nil, symbols_by_buf[vim.uri_to_bufnr(uri)])
+              end
+              if hold_responses then
+                table.insert(held, respond)
+              else
+                vim.schedule(respond)
+              end
+            else
+              callback(nil, nil)
+            end
+            return true, #requests
+          end,
+          notify = function()
+            return true
+          end,
+          is_closing = function()
+            return false
+          end,
+          terminate = function()
+            dispatchers.on_exit(0, 15)
+          end,
+        }
+      end
+
+      local function attach(bufnr, name)
+        local id = vim.lsp.start({
+          name = name or "mock_lsp",
+          cmd = server,
+          root_dir = vim.fn.getcwd(),
+        }, { bufnr = bufnr })
+        local client = vim.lsp.get_client_by_id(id)
+        clients[id] = client
+        assert.is_true(vim.wait(1000, function()
+          return client.initialized
+        end, 5))
+        return client
+      end
+
+      local function add_lsp_buffer(name, symbol_names, server_name)
+        local buf = add_listed_buffer(name)
+        vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines_for(symbol_names))
+        symbols_by_buf[buf] = symbols_for(symbol_names)
+        attach(buf, server_name)
+        return buf
+      end
+
+      local function wait_for_buffer(display, bufnr)
+        assert.is_true(vim.wait(1000, function()
+          return display.for_buf == bufnr
+        end, 5))
+      end
+
+      local function flush()
+        vim.wait(30, function()
+          return false
+        end, 5)
+      end
+
+      local function open_focused()
+        local display = open(root.children[1])
+        display:redraw()
+        press(actions.parent())
+        return display
+      end
+
+      before_each(function()
+        requests, held, hold_responses, symbols_by_buf, clients = {}, {}, false, {}, {}
+        symbols_by_buf[source_buf] = symbols_for({ "first", "second" })
+        attach(source_buf)
+        other = add_lsp_buffer("navbuddy_spec_other.lua", { "other_one", "other_two" })
+        third_buf = add_lsp_buffer("navbuddy_spec_third.lua", { "third_one" })
+      end)
+
+      after_each(function()
+        if current and not current.state.closed then
+          pcall(current.close, current)
+        end
+        for _, client in pairs(clients) do
+          client:stop(true)
+        end
+        vim.wait(1000, function()
+          return #vim.lsp.get_clients() == 0
+        end, 5)
+      end)
+
+      it("requests symbols for the selected buffer, not the Navbuddy window", function()
+        local display = open_focused()
+
+        press(actions.next_sibling())
+        wait_for_buffer(display, other)
+
+        assert.same({ vim.uri_from_bufnr(other) }, requests)
+      end)
+
+      it("switches window, nodes and panels once symbols arrive", function()
+        local display = open_focused()
+
+        press(actions.next_sibling())
+        wait_for_buffer(display, other)
+
+        assert.equals(other, vim.api.nvim_win_get_buf(source_win))
+        assert.equals("other_one", display.focus_node.name)
+        assert_has(panel_text(display.mid), "other_two")
+        assert_lacks(panel_text(display.mid), "first")
+        assert.is_true(display.state.buffer_focused)
+        assert.equals(2, vim.api.nvim_win_get_cursor(display.left.winid)[1])
+      end)
+
+      it("leaves the window alone until symbols arrive", function()
+        local display = open_focused()
+        hold_responses = true
+
+        press(actions.next_sibling())
+
+        assert.equals(source_buf, vim.api.nvim_win_get_buf(source_win))
+        assert.equals(source_buf, display.for_buf)
+
+        held[1]()
+        wait_for_buffer(display, other)
+      end)
+
+      it("moves source highlights to the new buffer", function()
+        local display = open_focused()
+        local ns = require("nvim-navbuddy.state").ns
+
+        press(actions.next_sibling())
+        wait_for_buffer(display, other)
+
+        assert.equals(0, source_highlight_count())
+        assert.is_true(#vim.api.nvim_buf_get_extmarks(other, ns, 0, -1, {}) > 0)
+      end)
+
+      it("ignores a response superseded by a newer selection", function()
+        local display = open_focused()
+        hold_responses = true
+
+        press(actions.next_sibling())
+        press(actions.next_sibling())
+        assert.equals(2, #held)
+
+        held[2]()
+        wait_for_buffer(display, third_buf)
+        held[1]()
+        flush()
+
+        assert.equals(third_buf, display.for_buf)
+        assert.equals(third_buf, vim.api.nvim_win_get_buf(source_win))
+        assert.equals("third_one", display.focus_node.name)
+      end)
+
+      it("ignores a response that arrives after closing", function()
+        local display = open_focused()
+        hold_responses = true
+
+        press(actions.next_sibling())
+        press(actions.close())
+        held[1]()
+        flush()
+
+        assert.equals(source_buf, display.for_buf)
+        assert.equals(source_buf, vim.api.nvim_win_get_buf(source_win))
+      end)
+
+      it("does not switch to a buffer with no symbols", function()
+        symbols_by_buf[other] = {}
+        local display = open_focused()
+
+        press(actions.next_sibling())
+        flush()
+
+        assert.equals(source_buf, display.for_buf)
+        assert.equals(source_buf, vim.api.nvim_win_get_buf(source_win))
+        assert.equals("first", display.focus_node.name)
+        assert.equals("No symbols found in buffer", notifications[1])
+      end)
+
+      it("switches back to the original buffer", function()
+        local display = open_focused()
+
+        press(actions.next_sibling())
+        wait_for_buffer(display, other)
+        press(actions.previous_sibling())
+        wait_for_buffer(display, source_buf)
+
+        assert.equals(source_buf, vim.api.nvim_win_get_buf(source_win))
+        assert.equals("first", display.focus_node.name)
+      end)
+
+      it("returns to the original buffer and cursor on close", function()
+        local display = open_focused()
+
+        press(actions.next_sibling())
+        wait_for_buffer(display, other)
+        press(actions.close())
+
+        assert.equals(source_buf, vim.api.nvim_win_get_buf(source_win))
+        assert.same({ 1, 0 }, vim.api.nvim_win_get_cursor(source_win))
+      end)
+
+      it("stays on a confirmed buffer on close", function()
+        local display = open_focused()
+
+        press(actions.next_sibling())
+        wait_for_buffer(display, other)
+        press(actions.parent())
+        press(actions.close())
+
+        assert.equals(other, vim.api.nvim_win_get_buf(source_win))
+      end)
+
+      it("confirms a selection whose response is still in flight", function()
+        local display = open_focused()
+        hold_responses = true
+
+        press(actions.next_sibling())
+        press(actions.parent())
+        held[2]()
+        wait_for_buffer(display, other)
+        press(actions.close())
+
+        assert.equals(other, vim.api.nvim_win_get_buf(source_win))
+      end)
+
+      it("goes to a node in the new buffer on select and records the jump", function()
+        local display = open_focused()
+
+        press(actions.next_sibling())
+        wait_for_buffer(display, other)
+        press(actions.children())
+        press(actions.next_sibling())
+        press(actions.select())
+
+        assert.equals(other, vim.api.nvim_win_get_buf(source_win))
+        assert.equals(3, vim.api.nvim_win_get_cursor(source_win)[1])
+        local jumped_from_source = false
+        for _, jump in ipairs(vim.fn.getjumplist(source_win)[1]) do
+          jumped_from_source = jumped_from_source or jump.bufnr == source_buf
+        end
+        assert.is_true(jumped_from_source)
+      end)
+
+      it("splits to the new buffer and leaves the original window on the original", function()
+        local display = open_focused()
+
+        press(actions.next_sibling())
+        wait_for_buffer(display, other)
+        press(actions.children())
+        press(actions.vsplit())
+
+        assert.equals(source_buf, vim.api.nvim_win_get_buf(source_win))
+        assert.equals(other, vim.api.nvim_get_current_buf())
+        vim.cmd("only")
+      end)
+
+      it("shows the switched buffer's server name", function()
+        local named = add_lsp_buffer("navbuddy_spec_named.lua", { "named_one" }, "other_lsp")
+        local display = open_focused()
+
+        vim.api.nvim_win_set_cursor(display.left.winid, { 3, 0 })
+        press(actions.next_sibling())
+        wait_for_buffer(display, named)
+
+        assert.equals("other_lsp", display.lsp_name)
+        assert.equals("[other_lsp]", display.right.border._.text.bottom:content())
+      end)
+
+      it("uses lsp.preference to choose the server", function()
+        attach(other, "preferred_lsp")
+        local display = open(root.children[1], { lsp = { preference = { "preferred_lsp" } } })
+        display:redraw()
+        press(actions.parent())
+
+        press(actions.next_sibling())
+        wait_for_buffer(display, other)
+
+        assert.equals("preferred_lsp", display.lsp_name)
+        assert.equals("[preferred_lsp]", display.right.border._.text.bottom:content())
+      end)
+
+      it("loads an unloaded buffer before looking for a server", function()
+        local path = vim.fn.tempname() .. ".lua"
+        vim.fn.writefile({ "local x" }, path)
+        local unloaded = vim.fn.bufadd(path)
+        vim.bo[unloaded].buflisted = true
+        local display = open(root.children[1])
+        assert.is_false(vim.api.nvim_buf_is_loaded(unloaded))
+        vim.api.nvim_win_set_cursor(display.left.winid, { 3, 0 })
+        display:redraw()
+        press(actions.parent())
+
+        vim.api.nvim_win_set_cursor(display.left.winid, { 3, 0 })
+        press(actions.next_sibling())
+
+        assert.is_true(vim.api.nvim_buf_is_loaded(unloaded))
+        assert.equals(source_buf, display.for_buf)
+        vim.fn.delete(path)
+      end)
     end)
   end)
 

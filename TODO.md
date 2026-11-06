@@ -24,7 +24,7 @@ Reviewed: 2026-11-05
   Reproduced: after `J` on `second`, `first.next` is still `second` and `fourth.prev` is still `third` (`actions.lua:584-588`).
   Reproduced by a pending spec: only the two swapped nodes get new line numbers (`:601-609`), so `d`, `V` or `J` on a child of a moved node acts on its old lines.
   Fix: repair `prev.next` and `next.prev`, and shift line numbers recursively, or re-request symbols after each move.
-- [ ] **Live buffer switching leaves inconsistent state.** (p1) [bug] `select_buffer` changes the window's buffer before it knows the new buffer can be loaded (`display/menu.lua:471-474`).
+- [x] **Live buffer switching leaves inconsistent state.** (p1) [bug] `select_buffer` changes the window's buffer before it knows the new buffer can be loaded (`display/menu.lua:471-474`).
   Reproduced by a pending spec: with no LSP on the target, `for_buf` and the node tree still describe the old buffer, so actions apply its ranges to the buffer now showing.
   `q` restores `start_cursor` in whichever buffer is showing, which can be out of range, and never restores the original buffer (`actions.lua:27`).
   The async callback in `reload_buffer` has no closed-display check or stale-response guard, so it can redraw dead windows or apply responses out of order when `j`/`k` is held.
@@ -34,10 +34,13 @@ Reviewed: 2026-11-05
   Without it, the display errors as soon as a top-level node is shown, which is what `:Navbuddy root` always does.
   Reproduced by a pending spec that blocks the module. It went unnoticed because the module resolves from `~/.config/nvim` here, which is the isolation gap listed in project 4.
   Fix: `pcall(require, ...)` and render without icons.
-- [ ] **A second LSP client evicts the first.** (p1) [bug] `if c.is_stopped then` tests a method, which is always truthy, so it should be `c:is_stopped()` (`init.lua:397`).
+- [x] **A second LSP client evicts the first.** (p1) [bug] `if c.is_stopped then` tests a method, which is always truthy, so it should be `c:is_stopped()` (`init.lua:397`).
   `Client.is_stopped` is confirmed to be a function; the two-client flow itself was not run.
   Each new client removes earlier ones, so the chooser menu and `lsp.preference` rarely get more than one client to work with. `table.remove` inside `ipairs` also skips entries.
   Fix: call the method and iterate backward. Also covers the "test with multiple LSP servers" note in `DEVELOPMENT_NOTES.md`.
+- [ ] **`open(bufnr)` mishandles a buffer that isn't current.** (p2) [bug] `init.lua:154` calls `navic.request_symbol`, which asks about the current buffer instead of `bufnr`. Its `file_uri` argument doesn't help, because navic nests it as `textDocument.textDocument`.
+  The handler also takes its window and cursor from the current window (`init.lua:203`, `:230-231`), so the display would pair them with the wrong buffer.
+  Fix: send the request directly, as `display:reload_buffer` does, and use a window showing `bufnr` or open it in the current one.
 - [ ] **`setup()` drops `theme` and `integrations`.** (p2) [bug] Neither key is merged into the config (`init.lua:264-316`).
   Reproduced: `setup({ theme = "hl-icon", integrations = { telescope = false } })` leaves `hl-line` and `nil`.
   Fix: merge them, ideally replacing the per-key merging with one `tbl_deep_extend` plus the mapping special case.
@@ -50,7 +53,7 @@ Reviewed: 2026-11-05
   Fix: define the command from `plugin/navbuddy.lua`, with lazy requires so startup stays cheap.
 - [ ] **The LspAttach guard and autocmd are wrong.** (p2) [bug] `args.data == nil and args.data.client_id == nil` errors on the case it means to catch, and should use `or` (`init.lua:324`).
   The autocmd at `:321` has no `group`, so `nvim_clear_autocmds` misses it and every `setup()` call adds another.
-- [ ] **LspDetach can remove the wrong client.** (p2) [bug] The callback closes over the most recently attached `client` and ignores `args.data.client_id` (`init.lua:417-433`).
+- [x] **LspDetach can remove the wrong client.** (p2) [bug] The callback closes over the most recently attached `client` and ignores `args.data.client_id` (`init.lua:417-433`).
   Each `attach` also clears the previous buffer autocmds. With two clients, detaching one removes the other from the list.
   Fix: read the client id from the event. Depends on the `is_stopped` fix to be observable.
 - [ ] **`darken()` produces wrong colors.** (p2) [bug] Channels are formatted with `%0x`, which does not pad.
@@ -120,6 +123,8 @@ Reviewed: 2026-11-05
 
 - [ ] **Report why nothing opened.** (p2) [feature] `:Navbuddy` returns silently when a buffer has no symbols (`init.lua:215-217`).
   Fix: notify at INFO level. Also covers the "error handling" note in `DEVELOPMENT_NOTES.md`.
+- [ ] **Switch to buffers whose LSP is still starting.** (p3) [feature] Selecting an unloaded buffer loads it, but its server usually hasn't attached yet, so the first press warns and only a later press switches.
+  Fix: wait for `LspAttach` on that buffer for a short time before warning.
 - [ ] **Show buffer focus mode more clearly.** (p3) [feature] Only the dimming signals the mode. `DEVELOPMENT_NOTES.md` suggests a visual indicator; a title or border label would do.
 - [ ] **Improve the buffer list.** (p3) [feature] `buffer/utils.lua` computes `modified` and `order` and never uses them, so show a modified marker and offer sorting.
   Long lists are also listed as untested in `DEVELOPMENT_NOTES.md`.

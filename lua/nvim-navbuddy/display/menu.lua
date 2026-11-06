@@ -18,6 +18,9 @@ function display:new(obj)
   local config = obj.config
   highlights.setup(config)
 
+  -- Reopening after help or a picker keeps the original return point
+  obj.start_buf = obj.start_buf or obj.for_buf
+
   obj.winblend = config.window.winblend
 
   local win_options = {
@@ -445,78 +448,138 @@ function display:redraw()
   buffer.fill_title(self.title, node, self.config, opts)
 end
 
-function display:select_buffer()
+--- Switch the source window to the buffer under the buffer list cursor. The
+--- switch happens only once that buffer's symbols arrive, so the display never
+--- pairs one buffer's nodes with another buffer's text.
+---@param opts? { confirm?: boolean } confirm: keep the buffer when Navbuddy is closed
+function display:select_buffer(opts)
   if not self.state.in_buffer_list or not self.state.buffer_list then
     return
   end
 
   local cursor_pos = vim.api.nvim_win_get_cursor(self.left.winid)
   local selected_buf_info = self.state.buffer_list[cursor_pos[1]]
-
-  if selected_buf_info and selected_buf_info.data then
-    local target_bufnr = selected_buf_info.data.buffer
-
-    -- Update the source buffer display window to show the new buffer
-    vim.api.nvim_win_set_buf(self.for_win, target_bufnr)
-
-    -- Reload LSP data for the new buffer
-    self:reload_buffer(target_bufnr)
+  if not (selected_buf_info and selected_buf_info.data) then
+    return
   end
+
+  local target_bufnr = selected_buf_info.data.buffer
+  local confirm = opts ~= nil and opts.confirm == true
+
+  -- Any newer selection supersedes a request still in flight
+  self.switch_request_id = (self.switch_request_id or 0) + 1
+
+  if target_bufnr == self.for_buf then
+    if confirm then
+      self:confirm_source()
+    end
+    return
+  end
+
+  self:reload_buffer(target_bufnr, self.switch_request_id, confirm)
 end
 
-function display:reload_buffer(bufnr)
-  local navic = require("nvim-navic.lib")
+local function pick_symbol_client(bufnr, preference)
+  local clients = vim.tbl_filter(function(client)
+    return client.server_capabilities and client.server_capabilities.documentSymbolProvider
+  end, vim.lsp.get_clients({ bufnr = bufnr }))
 
-  -- Store reference to self for closure
-  local self_ref = self
-
-  -- Check if buffer has LSP attached
-  local clients = vim.lsp.get_clients({ bufnr = bufnr })
-  local lsp_client = nil
-
-  for _, client in ipairs(clients) do
-    if client.server_capabilities.documentSymbolProvider then
-      lsp_client = client
-      break
+  for _, name in ipairs(preference or {}) do
+    for _, client in ipairs(clients) do
+      if client.name == name then
+        return client
+      end
     end
   end
+  return clients[1]
+end
 
-  if not lsp_client then
+function display:reload_buffer(bufnr, request_id, confirm)
+  if not vim.api.nvim_buf_is_valid(bufnr) then
+    return
+  end
+
+  -- Listed buffers can be unloaded, for example the extra files in `nvim a b`
+  if not vim.api.nvim_buf_is_loaded(bufnr) then
+    pcall(vim.fn.bufload, bufnr)
+  end
+
+  local client = pick_symbol_client(bufnr, self.config.lsp.preference)
+  if not client then
     vim.notify("No LSP server attached to buffer", vim.log.levels.WARN)
     return
   end
 
-  -- Request symbols for the new buffer
-  navic.request_symbol(bufnr, function(buf, symbols)
-    navic.update_data(buf, symbols)
-    navic.update_context(buf)
-    local context_data = navic.get_context_data(buf)
+  local navic = require("nvim-navic.lib")
 
-    if not context_data or #context_data == 0 then
+  -- navic.request_symbol can't be used here: without a URI it asks about the
+  -- current buffer, which is the Navbuddy window, and it nests a URI it is given.
+  local params = { textDocument = { uri = vim.uri_from_bufnr(bufnr) } }
+  local function on_response(err, symbols)
+    if request_id ~= self.switch_request_id or not vim.api.nvim_win_is_valid(self.for_win) then
+      return
+    end
+
+    if err or not vim.api.nvim_buf_is_loaded(bufnr) then
+      vim.notify("Could not get symbols for buffer", vim.log.levels.WARN)
+      return
+    end
+
+    navic.update_data(bufnr, symbols or {})
+    navic.update_context(bufnr, { 1, 0 })
+    local context_data = navic.get_context_data(bufnr)
+    local root_node = context_data and context_data[1]
+
+    if not (root_node and root_node.children and root_node.children[1]) then
       vim.notify("No symbols found in buffer", vim.log.levels.WARN)
       return
     end
 
-    -- Get the root node
-    local root_node = context_data[1]
-    while root_node.parent and not root_node.parent.is_root do
-      root_node = root_node.parent
+    self:commit_buffer_switch(bufnr, root_node.children[1], client.name)
+    if confirm then
+      self:confirm_source()
     end
+  end
 
-    -- Find the first valid child node to focus on
-    local focus_node = root_node
-    if root_node.children and #root_node.children > 0 then
-      focus_node = root_node.children[1]
-    end
+  if vim.fn.has("nvim-0.11") == 1 then
+    client:request("textDocument/documentSymbol", params, on_response, bufnr)
+  else
+    client.request("textDocument/documentSymbol", params, on_response, bufnr)
+  end
+end
 
-    -- Update display state
-    self_ref.for_buf = buf
-    self_ref.focus_node = focus_node
-    self_ref.lsp_name = lsp_client.name
+function display:commit_buffer_switch(bufnr, focus_node, lsp_name)
+  self:clear_highlights()
 
-    -- Redraw the display with new data
-    self_ref:redraw()
-  end, lsp_client)
+  vim.api.nvim_win_set_buf(self.for_win, bufnr)
+  self.source_entry_cursor = vim.api.nvim_win_get_cursor(self.for_win)
+
+  self.for_buf = bufnr
+  self.focus_node = focus_node
+  self.lsp_name = lsp_name
+  self.right.border:set_text("bottom", nui_text("[" .. lsp_name .. "]", "NavbuddyFloatBorder"), "right")
+
+  self:redraw()
+  self:focus_range()
+end
+
+--- Make the current buffer the one Navbuddy returns to when it is closed.
+function display:confirm_source()
+  if self.for_buf ~= self.start_buf then
+    self.start_buf = self.for_buf
+    self.start_cursor = self.source_entry_cursor or self.start_cursor
+  end
+end
+
+--- Put the source window back on the buffer and cursor Navbuddy returns to.
+function display:restore_start()
+  if not vim.api.nvim_buf_is_valid(self.start_buf) then
+    return
+  end
+  if vim.api.nvim_win_get_buf(self.for_win) ~= self.start_buf then
+    vim.api.nvim_win_set_buf(self.for_win, self.start_buf)
+  end
+  vim.api.nvim_win_set_cursor(self.for_win, self.start_cursor)
 end
 
 function display:navigate_buffer_list(direction)
@@ -572,6 +635,7 @@ end
 
 function display:close()
   self.state.closed = true
+  self.switch_request_id = (self.switch_request_id or 0) + 1
   self.layout:unmount()
   self:clear_highlights()
 
