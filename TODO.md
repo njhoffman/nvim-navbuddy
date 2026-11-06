@@ -75,7 +75,7 @@ Reviewed: 2026-11-05
   Fix: use `vim.fn.strdisplaywidth` and `vim.fn.strcharpart`.
 - [ ] **`fill_title` default options crash.** (p3) [bug] The default `opts` has no `winsize`, so `opts.winsize.w` errors, and the fallback passes a popup where a window id is needed (`buffer/title.lua:25-29`).
   Only reachable by callers that omit `opts`.
-- [ ] **`r` can rename the wrong symbol.** (p3) [bug] `actions.rename` relies on `follow_node` having moved the cursor (`actions.lua:432-436`).
+- [x] **`r` can rename the wrong symbol.** (p3) [bug] `actions.rename` relies on `follow_node` having moved the cursor (`actions.lua:432-436`).
   With `follow_node = false` the rename applies to the symbol at the original cursor.
   Fix: set the cursor to the focused node's name first.
 - [ ] **Yank always targets the `+` register.** (p3) [feature] `yank_name` and `yank_scope` hardcode `"+y` (`actions.lua:267`, `:290`), which depends on a clipboard provider.
@@ -125,7 +125,7 @@ Reviewed: 2026-11-05
 
 ## 5. Suggestions
 
-- [ ] **`hide_empty` section option isn't implemented.** (p3) [feature] `~/.config/nvim/lua/configs/nvim-navbuddy.lua` sets `sections.left.hide_empty = true`, but no code reads it.
+- [x] **`hide_empty` section option isn't implemented.** (p3) [feature] `~/.config/nvim/lua/configs/nvim-navbuddy.lua` sets `sections.left.hide_empty = true`, but no code reads it.
   Implement it or remove it from that config.
 - [x] **Report why nothing opened.** (p2) [feature] `:Navbuddy` returns silently when a buffer has no symbols (`init.lua:215-217`).
   Fix: notify at INFO level. Also covers the "error handling" note in `DEVELOPMENT_NOTES.md`.
@@ -134,4 +134,4 @@ Reviewed: 2026-11-05
 - [ ] **Show buffer focus mode more clearly.** (p3) [feature] Only the dimming signals the mode. `DEVELOPMENT_NOTES.md` suggests a visual indicator; a title or border label would do.
 - [ ] **Improve the buffer list.** (p3) [feature] `buffer/utils.lua` computes `modified` and `order` and never uses them, so show a modified marker and offer sorting.
   Long lists are also listed as untested in `DEVELOPMENT_NOTES.md`.
-- [ ] **Keep the window open on resize.** (p3) [feature] VimResized closes Navbuddy. Relayout instead, once the layout is config-driven.
+- [x] **Keep the window open on resize.** (p3) [feature] VimResized closes Navbuddy. Relayout instead, once the layout is config-driven.

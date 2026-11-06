@@ -431,7 +431,10 @@ end
 --- Trigger lsp rename for current node.
 function actions.rename()
   local callback = function(display)
+    local name_start = display.focus_node.name_range.start
     display:close()
+    vim.api.nvim_set_current_win(display.for_win)
+    vim.api.nvim_win_set_cursor(display.for_win, { name_start.line, name_start.character })
     vim.lsp.buf.rename()
   end
 

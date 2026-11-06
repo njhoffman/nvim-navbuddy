@@ -359,6 +359,81 @@ describe("display", function()
       assert.equals(18, mid_height(open_with_items(50)))
     end)
 
+    it("refits the height and stays at the bottom when the editor is resized", function()
+      local display = open_with_items(50)
+      assert.equals(5, mid_height(display))
+      local bottom = bottom_row(display)
+
+      vim.o.lines = 100
+      vim.api.nvim_exec_autocmds("VimResized", {})
+
+      assert.equals(18, mid_height(display))
+      assert.is_true(bottom_row(display) > bottom)
+      assert.is_true(vim.o.lines - bottom_row(display) <= 2)
+    end)
+
+    it("resizes percentage sizes with the editor", function()
+      local display = open(root.children[1], { window = { size = "50%" } })
+
+      vim.o.columns, vim.o.lines = 120, 60
+      vim.api.nvim_exec_autocmds("VimResized", {})
+
+      assert.equals(60, vim.api.nvim_win_get_width(display.title.winid) + 2)
+      assert.equals(27, total_height(display) - 1)
+    end)
+
+    it("recenters the title when the editor is resized", function()
+      local display = open(root.children[1], { window = { size = { width = "50%" } } })
+      local before = panel_text(display.title)
+
+      vim.o.columns = 160
+      vim.api.nvim_exec_autocmds("VimResized", {})
+
+      assert.is_true(panel_text(display.title) ~= before)
+    end)
+
+    it("keeps a shown preview when the editor is resized", function()
+      local display = open(root.children[1])
+      press(actions.toggle_preview())
+
+      vim.o.lines = 60
+      vim.api.nvim_exec_autocmds("VimResized", {})
+
+      assert.equals(source_buf, vim.api.nvim_win_get_buf(display.right.winid))
+    end)
+
+    it("keeps preview and buffer focus when the editor is resized", function()
+      root = mock.make_tree({ { name = "leaf" } })
+      vim.api.nvim_buf_set_lines(source_buf, 0, -1, false, mock.source_lines(root))
+      local display = open(root.children[1])
+      display:enter_preview_focus()
+
+      vim.o.lines = 60
+      vim.api.nvim_exec_autocmds("VimResized", {})
+
+      assert.is_true(display.state.preview_focused)
+      assert.equals(source_buf, vim.api.nvim_win_get_buf(display.right.winid))
+      display:exit_preview_focus()
+
+      display:enter_buffer_focus()
+      vim.o.lines = 50
+      vim.api.nvim_exec_autocmds("VimResized", {})
+
+      assert.is_true(display.state.buffer_focused)
+    end)
+
+    it("survives a very small editor", function()
+      local display = open_with_items(50)
+
+      vim.o.columns, vim.o.lines = 20, 5
+      vim.api.nvim_exec_autocmds("VimResized", {})
+      assert.is_true(vim.api.nvim_win_is_valid(display.mid.winid))
+
+      vim.o.columns, vim.o.lines = 100, 40
+      vim.api.nvim_exec_autocmds("VimResized", {})
+      assert.equals(5, mid_height(display))
+    end)
+
     it("takes only the title and the line above the lists from max_height", function()
       local display = open_with_items(50, { window = { max_height = 14 } })
 
@@ -411,6 +486,26 @@ describe("display", function()
       press(actions.next_sibling())
       assert.equals(5, mid_height(display))
       assert.equals(bottom, bottom_row(display))
+    end)
+
+    it("renames the focused node when the source cursor did not follow it", function()
+      local display = open(root.children[1], { source_buffer = { follow_node = false } })
+      press(actions.next_sibling())
+      local target = display.focus_node
+      assert.is_true(target ~= root.children[1])
+
+      local saved_rename = vim.lsp.buf.rename
+      local renamed_at
+      vim.lsp.buf.rename = function()
+        renamed_at = { vim.api.nvim_get_current_win(), vim.api.nvim_win_get_cursor(0) }
+      end
+      press(actions.rename())
+      vim.lsp.buf.rename = saved_rename
+
+      assert.same({
+        display.for_win,
+        { target.name_range.start.line, target.name_range.start.character },
+      }, renamed_at)
     end)
 
     it("does not fit a fixed height", function()
@@ -1464,21 +1559,13 @@ describe("display", function()
       assert.equals(before, resize_autocmds())
     end)
 
-    it("removes its VimResized autocmd when resized", function()
-      local before = #vim.api.nvim_get_autocmds({ group = "Navbuddy", event = "VimResized" })
-      open(root.children[2])
-
-      vim.api.nvim_exec_autocmds("VimResized", {})
-
-      assert.equals(before, #vim.api.nvim_get_autocmds({ group = "Navbuddy", event = "VimResized" }))
-    end)
-
-    it("closes on VimResized", function()
+    it("stays open on VimResized", function()
       local display = open(root.children[2])
 
       vim.api.nvim_exec_autocmds("VimResized", {})
 
-      assert.is_true(display.state.closed)
+      assert.is_false(display.state.closed)
+      assert.is_true(vim.api.nvim_win_is_valid(display.mid.winid))
     end)
   end)
 end)

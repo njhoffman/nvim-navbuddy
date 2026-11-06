@@ -6,6 +6,16 @@ All notable changes to this fork are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-06
+
+### Changed
+
+- Resizing the editor no longer closes Navbuddy. The window refits to the new size and keeps its position, focus mode and any preview.
+
+### Fixed
+
+- `r` renames the focused symbol when `source_buffer.follow_node` is off. Before, it renamed whatever was under the original cursor.
+
 ## [0.4.1] - 2026-11-06
 
 ### Changed

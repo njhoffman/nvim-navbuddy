@@ -169,7 +169,7 @@ function display:new(obj)
         and obj.state.leaving_window_for_reorientation == false
         and obj.state.closed == false
       then
-        obj:close()
+        obj:relayout()
       end
     end,
   })
@@ -406,6 +406,22 @@ function display:fit_height()
       size = { width = window.size.width, height = height },
       position = window.position,
     })
+  end
+end
+
+--- Fit the layout to a resized editor, keeping the focus modes and any preview.
+function display:relayout()
+  local window = self.config.window
+  local size = window.size
+  if self.auto_height then
+    size = { width = size.width, height = self.layout_height }
+  end
+  self.layout:update({ size = size, position = window.position })
+
+  local showing_preview = vim.api.nvim_win_get_buf(self.right.winid) ~= self.right.bufnr
+  self:redraw()
+  if showing_preview then
+    self:show_preview()
   end
 end
 
