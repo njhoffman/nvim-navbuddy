@@ -3,17 +3,25 @@
 
 describe("attached clients", function()
   local navbuddy, source_buf, opened, original_new, clients
+  local requests, errors_to_send, symbols_to_send
 
   local function server(dispatchers)
     return {
-      request = function(method, _, callback)
+      request = function(method, params, callback)
         if method == "initialize" then
           callback(nil, { capabilities = { documentSymbolProvider = true } })
         elseif method == "textDocument/documentSymbol" then
+          table.insert(requests, params.textDocument.uri)
           local range = { start = { line = 0, character = 0 }, ["end"] = { line = 1, character = 1 } }
           local selection = { start = { line = 0, character = 0 }, ["end"] = { line = 0, character = 3 } }
+          local symbols = symbols_to_send or { { name = "fun", kind = 12, range = range, selectionRange = selection } }
           vim.schedule(function()
-            callback(nil, { { name = "fun", kind = 12, range = range, selectionRange = selection } })
+            if errors_to_send > 0 then
+              errors_to_send = errors_to_send - 1
+              callback({ code = -32801, message = "content modified" }, nil)
+            else
+              callback(nil, symbols)
+            end
           end)
         else
           callback(nil, nil)
@@ -88,6 +96,7 @@ describe("attached clients", function()
     vim.api.nvim_set_current_buf(source_buf)
 
     clients, opened = {}, nil
+    requests, errors_to_send, symbols_to_send = {}, 0, nil
     local display = require("nvim-navbuddy.display")
     original_new = display.new
     display.new = function(opts)
@@ -183,6 +192,110 @@ describe("attached clients", function()
     navbuddy.open()
 
     assert.equals("second_lsp", wait_for_display().lsp_name)
+  end)
+
+  describe("opening a buffer that isn't current", function()
+    local other_buf, source_win
+
+    local function press_close()
+      require("nvim-navbuddy.actions").close().callback(opened)
+    end
+
+    before_each(function()
+      source_win = vim.api.nvim_get_current_win()
+      other_buf = vim.api.nvim_create_buf(true, false)
+      vim.api.nvim_buf_set_name(other_buf, "navbuddy_attach_other.lua")
+      vim.api.nvim_buf_set_lines(other_buf, 0, -1, false, { "fun {", "}" })
+
+      local client = start_client("mock_lsp")
+      vim.lsp.buf_attach_client(other_buf, client.id)
+      navbuddy.attach(client, source_buf)
+      navbuddy.attach(client, other_buf)
+    end)
+
+    after_each(function()
+      if opened and not opened.state.closed then
+        pcall(opened.close, opened)
+      end
+      opened = nil
+      vim.cmd("silent! only")
+    end)
+
+    it("asks about the current buffer by default", function()
+      navbuddy.open()
+      wait_for_display()
+
+      assert.same({ vim.uri_from_bufnr(source_buf) }, requests)
+    end)
+
+    it("asks about the requested buffer", function()
+      navbuddy.open(other_buf)
+      wait_for_display()
+
+      assert.same({ vim.uri_from_bufnr(other_buf) }, requests)
+    end)
+
+    it("accepts the buffer in an options table", function()
+      navbuddy.open({ bufnr = other_buf })
+
+      assert.equals(other_buf, wait_for_display().for_buf)
+    end)
+
+    it("shows the buffer in the current window and returns on close", function()
+      vim.api.nvim_win_set_cursor(source_win, { 2, 0 })
+
+      navbuddy.open(other_buf)
+      wait_for_display()
+
+      assert.equals(source_win, opened.for_win)
+      assert.equals(other_buf, vim.api.nvim_win_get_buf(source_win))
+
+      press_close()
+
+      assert.equals(source_buf, vim.api.nvim_win_get_buf(source_win))
+      assert.same({ 2, 0 }, vim.api.nvim_win_get_cursor(source_win))
+    end)
+
+    it("uses a window already showing the buffer", function()
+      vim.cmd("vsplit")
+      local other_win = vim.api.nvim_get_current_win()
+      vim.api.nvim_win_set_buf(other_win, other_buf)
+      vim.api.nvim_set_current_win(source_win)
+
+      navbuddy.open(other_buf)
+      wait_for_display()
+
+      assert.equals(other_win, opened.for_win)
+      assert.equals(source_buf, vim.api.nvim_win_get_buf(source_win))
+
+      press_close()
+
+      assert.equals(other_buf, vim.api.nvim_win_get_buf(other_win))
+      assert.equals(other_win, vim.api.nvim_get_current_win())
+    end)
+
+    it("leaves the window alone when the buffer has no symbols", function()
+      symbols_to_send = {}
+
+      navbuddy.open(other_buf)
+      vim.wait(50, function()
+        return false
+      end, 5)
+
+      assert.is_nil(opened)
+      assert.equals(source_buf, vim.api.nvim_win_get_buf(source_win))
+    end)
+
+    it("retries the same buffer after a server error", function()
+      errors_to_send = 1
+
+      navbuddy.open(other_buf)
+      assert.is_true(vim.wait(2000, function()
+        return opened ~= nil
+      end, 10))
+
+      assert.same({ vim.uri_from_bufnr(other_buf), vim.uri_from_bufnr(other_buf) }, requests)
+    end)
   end)
 
   describe("auto_attach", function()

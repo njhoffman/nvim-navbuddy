@@ -35,7 +35,14 @@ local function fill_files(buf, active_bufnr, config)
         require("nvim-navbuddy.hl").add_highlight(buf.bufnr, state.ns, hl_group, i - 1, 0, -1)
       end
     elseif config.theme == 'hl-icon' then
-      require("nvim-navbuddy.hl").add_highlight(buf.bufnr, state.ns, curbuf.display[1].hl, i - 1, 2, 4)
+      require("nvim-navbuddy.hl").add_highlight(
+        buf.bufnr,
+        state.ns,
+        curbuf.display[1].hl,
+        i - 1,
+        1,
+        1 + #(curbuf.display[1].text or '')
+      )
     end
   end
 

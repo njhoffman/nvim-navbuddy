@@ -103,6 +103,38 @@ describe("utils", function()
     end)
   end)
 
+  describe("fit_width", function()
+    it("pads short text to the width", function()
+      assert.equals("ab  ", utils.fit_width("ab", 4))
+    end)
+
+    it("returns text that already fits unchanged", function()
+      assert.equals("abcd", utils.fit_width("abcd", 4))
+    end)
+
+    it("shortens long text with an ellipsis", function()
+      assert.equals("abc…", utils.fit_width("abcdef", 4))
+    end)
+
+    it("measures wide characters by display cells", function()
+      assert.equals("日本 ", utils.fit_width("日本", 5))
+    end)
+
+    it("never cuts inside a character", function()
+      local fitted = utils.fit_width("日本語テキスト", 6)
+      assert.equals("日本… ", fitted)
+      assert.equals(6, vim.fn.strdisplaywidth(fitted))
+    end)
+
+    it("counts a multibyte icon by its display width", function()
+      assert.equals(10, vim.fn.strdisplaywidth(utils.fit_width(" 󰊕 name", 10)))
+    end)
+
+    it("returns an empty string for no width", function()
+      assert.equals("", utils.fit_width("abc", 0))
+    end)
+  end)
+
   describe("check_integration", function()
     it("returns true when explicitly enabled", function()
       local config = { integrations = { telescope = true } }

@@ -397,6 +397,124 @@ describe("display", function()
     end
   end)
 
+  describe("text widths", function()
+    local function open_named(names, overrides)
+      local specs = {}
+      for i, name in ipairs(names) do
+        specs[i] = { name = name }
+      end
+      root = mock.make_tree(specs)
+      vim.api.nvim_buf_set_lines(source_buf, 0, -1, false, mock.source_lines(root))
+      return open(root.children[1], overrides)
+    end
+
+    local function mid_lines(display)
+      return vim.api.nvim_buf_get_lines(display.mid.bufnr, 0, -1, false)
+    end
+
+    local function is_valid_utf8(text)
+      local i = 1
+      while i <= #text do
+        local byte = text:byte(i)
+        local length = byte < 0x80 and 1
+          or (byte >= 0xC2 and byte < 0xE0) and 2
+          or (byte >= 0xE0 and byte < 0xF0) and 3
+          or (byte >= 0xF0 and byte < 0xF5) and 4
+        if not length or i + length - 1 > #text then
+          return false
+        end
+        for j = i + 1, i + length - 1 do
+          local continuation = text:byte(j)
+          if continuation < 0x80 or continuation > 0xBF then
+            return false
+          end
+        end
+        i = i + length
+      end
+      return true
+    end
+
+    it("fills each line to the same display width whatever the name", function()
+      local display = open_named({ "plain", "日本語", "café" })
+      local lines = mid_lines(display)
+
+      local width = vim.fn.strdisplaywidth(lines[1])
+      assert.equals(width, vim.fn.strdisplaywidth(lines[2]))
+      assert.equals(width, vim.fn.strdisplaywidth(lines[3]))
+    end)
+
+    it("leaves room for the node marker inside the window", function()
+      local display = open_named({ "plain" })
+
+      local line_width = vim.fn.strdisplaywidth(mid_lines(display)[1])
+      assert.is_true(line_width < vim.api.nvim_win_get_width(display.mid.winid))
+    end)
+
+    it("uses the whole width when node markers are off", function()
+      local display = open_named({ "plain" }, { node_markers = { enabled = false } })
+
+      local line_width = vim.fn.strdisplaywidth(mid_lines(display)[1])
+      assert.equals(vim.api.nvim_win_get_width(display.mid.winid), line_width)
+    end)
+
+    it("shortens a long multibyte name on a character boundary", function()
+      local display = open_named({ string.rep("日本語", 30) })
+      local line = mid_lines(display)[1]
+
+      assert.is_false(is_valid_utf8(("日"):sub(1, 2)))
+      assert.is_true(is_valid_utf8(line))
+      assert_has(line, "…")
+      assert.is_true(vim.fn.strdisplaywidth(line) < vim.api.nvim_win_get_width(display.mid.winid))
+    end)
+
+    it("centers the title by display width", function()
+      local display = open_named({ "日本語" })
+      local line = vim.api.nvim_buf_get_lines(display.title.bufnr, 0, 1, false)[1]
+      local indent = #line:match("^ *")
+      local text_width = vim.fn.strdisplaywidth(line) - indent
+      local win_width = vim.api.nvim_win_get_width(display.title.winid)
+
+      assert.equals(math.floor((win_width - text_width) / 2), indent)
+    end)
+
+    it("highlights exactly the icon of each title node", function()
+      local display = open(root.children[1].children[1])
+      local line = vim.api.nvim_buf_get_lines(display.title.bufnr, 0, 1, false)[1]
+      local icon = display.config.icons[12]
+      local ns = require("nvim-navbuddy.state").ns
+      local marks = vim.api.nvim_buf_get_extmarks(display.title.bufnr, ns, 0, -1, { details = true })
+
+      assert.equals(2, #marks)
+      for _, mark in ipairs(marks) do
+        assert.equals("NavbuddyFunction", mark[4].hl_group)
+        assert.equals(icon, line:sub(mark[3] + 1, mark[4].end_col))
+      end
+    end)
+
+    it("shortens a title that cannot fit without hanging", function()
+      local display = open_named({ string.rep("long_name_", 40) })
+      local line = vim.api.nvim_buf_get_lines(display.title.bufnr, 0, 1, false)[1]
+
+      assert_has(line, "…")
+      assert.is_true(vim.fn.strdisplaywidth(line) <= vim.api.nvim_win_get_width(display.title.winid))
+    end)
+
+    it("highlights the whole icon with theme hl-icon", function()
+      local display = open_named({ "plain" }, { theme = "hl-icon" })
+      local line = mid_lines(display)[1]
+      local icon = display.config.icons[12]
+      local ns = require("nvim-navbuddy.state").ns
+      local found = false
+
+      for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(display.mid.bufnr, ns, 0, -1, { details = true })) do
+        if mark[2] == 0 and mark[4].hl_group == "NavbuddyFunction" and mark[4].end_col then
+          found = found or line:sub(mark[3] + 1, mark[4].end_col) == icon
+        end
+      end
+      assert.is_true(found)
+    end)
+  end)
+
   describe("help", function()
     local saved_lines
 
@@ -1182,6 +1300,30 @@ describe("display", function()
 
       assert.is_true(display.state.closed)
       assert.equals(0, float_count())
+    end)
+
+    it("removes its VimResized autocmd", function()
+      local function resize_autocmds()
+        return #vim.api.nvim_get_autocmds({ group = "Navbuddy", event = "VimResized" })
+      end
+      local before = resize_autocmds()
+
+      for _ = 1, 3 do
+        local display = open(root.children[2])
+        assert.equals(before + 1, resize_autocmds())
+        display:close()
+      end
+
+      assert.equals(before, resize_autocmds())
+    end)
+
+    it("removes its VimResized autocmd when resized", function()
+      local before = #vim.api.nvim_get_autocmds({ group = "Navbuddy", event = "VimResized" })
+      open(root.children[2])
+
+      vim.api.nvim_exec_autocmds("VimResized", {})
+
+      assert.equals(before, #vim.api.nvim_get_autocmds({ group = "Navbuddy", event = "VimResized" }))
     end)
 
     it("closes on VimResized", function()

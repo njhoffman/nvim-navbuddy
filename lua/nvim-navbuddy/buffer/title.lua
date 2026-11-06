@@ -39,67 +39,56 @@ local function fill_title(buf, focus_node, config, opts)
   end
   node_chain = rev
 
+  local display_width = vim.fn.strdisplaywidth
   local node_names = {}
   local chain_length = 0
   for i, node in ipairs(node_chain) do
     if not node.is_root then
-      if i == 1 then
-        chain_length = chain_length + #node.name + 2
-      else
-        chain_length = chain_length + #opts.separator + #node.name
+      local name = vim.trim(node.name)
+      chain_length = chain_length + display_width(config.icons[node.kind]) + display_width(name)
+      if i > 1 then
+        chain_length = chain_length + display_width(opts.separator)
       end
-      table.insert(node_names, vim.trim(node.name))
+      table.insert(node_names, name)
     end
   end
 
+  -- Shorten names from the second level outward, each at most once
   local truncate_i = #node_chain > 2 and 2 or 1
-  while chain_length >= winwidth - 3 do
-    chain_length = chain_length - #node_names[truncate_i] + 1
+  local remaining = #node_names
+  while chain_length >= winwidth - 3 and remaining > 0 do
+    chain_length = chain_length - display_width(node_names[truncate_i]) + 1
     node_names[truncate_i] = '…'
     truncate_i = truncate_i == #node_names and 1 or (truncate_i + 1)
+    remaining = remaining - 1
   end
-  -- vim.dbglog('2', chain_length, node_names)
 
-  local icon_n = 0
   local node_path = ''
   local hls = {}
   for i, node in ipairs(node_chain) do
-    local icon = config.icons[node.kind]
-    local sfx = navic.adapt_lsp_num_to_str(node.kind)
     if not node.is_root then
-      if i == 1 then
-        table.insert(hls, { 'Navbuddy' .. sfx, #node_path - 1, #node_path })
-        node_path = icon .. node_names[i]
-      else
-        if i == #node_chain then
-          table.insert(hls, { 'Navbuddy' .. sfx, #node_path + 4, #node_path + 5 })
-        else
-          table.insert(hls, { 'Navbuddy' .. sfx, #node_path + 4, #node_path + 5 })
-        end
-        node_path = node_path .. opts.separator .. icon .. node_names[i]
+      local icon = config.icons[node.kind]
+      local sfx = navic.adapt_lsp_num_to_str(node.kind)
+      if i > 1 then
+        node_path = node_path .. opts.separator
       end
-      icon_n = icon_n + 1
+      table.insert(hls, { 'Navbuddy' .. sfx, #node_path, #node_path + #icon })
+      node_path = node_path .. icon .. node_names[i]
     end
   end
-  node_path = node_path:gsub('^%s*(.-)%s*$', '%1')
-  local icon_width = icon_n * 2
-  -- icon_width = icon_width > 0 and icon_width or 0
 
   local indent = 0
   if opts.align == 'center' then
-    indent = math.floor((winwidth - #node_path) / 2) + icon_width
+    indent = math.max(math.floor((winwidth - display_width(node_path)) / 2), 0)
   end
-  node_path = string.rep('', indent, ' ') .. node_path
-  -- vim.dbglog('3', indent, node_path, hls)
+  node_path = string.rep(' ', indent) .. node_path
 
   vim.bo[buf.bufnr].modifiable = true
   vim.api.nvim_buf_set_lines(buf.bufnr, 0, -1, false, { node_path })
   vim.bo[buf.bufnr].modifiable = false
 
   for _, hl in ipairs(hls) do
-    if hl[2] + indent < winwidth and hl[3] < winwidth then
-      require("nvim-navbuddy.hl").add_highlight(buf.bufnr, state.ns, hl[1], 0, indent + hl[2], indent + hl[3])
-    end
+    require("nvim-navbuddy.hl").add_highlight(buf.bufnr, state.ns, hl[1], 0, indent + hl[2], indent + hl[3])
   end
 end
 

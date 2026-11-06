@@ -79,6 +79,7 @@ local nui_menu = require("nui.menu")
 local display = require("nvim-navbuddy.display")
 local actions = require("nvim-navbuddy.actions")
 local default_config = require("nvim-navbuddy.config")
+local utils = require("nvim-navbuddy.utils")
 
 -- Default configuration loaded from nvim-navbuddy.config module
 -- See lua/nvim-navbuddy/config.lua for full default configuration
@@ -149,17 +150,53 @@ local function choose_lsp_menu(for_buf, make_request)
   menu:mount()
 end
 
+--- Make a window showing bufnr current. If none exists, show it in the current
+--- window and return the buffer and cursor to go back to on close.
+---@param bufnr number
+---@return { start_buf: number?, start_cursor: number[] }
+local function focus_source_window(bufnr)
+  local current_win = vim.api.nvim_get_current_win()
+
+  if vim.api.nvim_win_get_buf(current_win) == bufnr then
+    return { start_cursor = vim.api.nvim_win_get_cursor(current_win) }
+  end
+
+  local shown_in = vim.fn.bufwinid(bufnr)
+  if shown_in ~= -1 then
+    vim.api.nvim_set_current_win(shown_in)
+    return { start_cursor = vim.api.nvim_win_get_cursor(shown_in) }
+  end
+
+  local origin = {
+    start_buf = vim.api.nvim_win_get_buf(current_win),
+    start_cursor = vim.api.nvim_win_get_cursor(current_win),
+  }
+  vim.api.nvim_win_set_buf(current_win, bufnr)
+  return origin
+end
+
 local function request(for_buf, handler, opts)
   local function make_request(client)
-    navic.request_symbol(for_buf, function(bufnr, symbols)
-      navic.update_data(bufnr, symbols)
-      navic.update_context(bufnr)
-      local context_data = navic.get_context_data(bufnr)
+    utils.request_document_symbols(client, for_buf, function(err, symbols)
+      if err then
+        vim.notify("nvim-navbuddy: Could not get symbols from " .. client.name, vim.log.levels.ERROR)
+        return
+      end
+
+      navic.update_data(for_buf, symbols or {})
+      local tree = navic.get_tree(for_buf)
+      if not (tree and tree.children and tree.children[1]) then
+        return
+      end
+
+      local source = focus_source_window(for_buf)
+      navic.update_context(for_buf, vim.api.nvim_win_get_cursor(0))
+      local context_data = navic.get_context_data(for_buf)
 
       local curr_node = context_data[#context_data]
 
-      handler(for_buf, curr_node, client.name, opts)
-    end, client)
+      handler(for_buf, curr_node, client.name, opts, source)
+    end)
   end
 
   if navbuddy_attached_clients[for_buf] == nil then
@@ -197,7 +234,8 @@ end
 ---@param curr_node Navbuddy.symbolNode
 ---@param lsp_name string
 ---@param opts Navbuddy.openOpts
-local function handler(bufnr, curr_node, lsp_name, opts)
+---@param source { start_buf: number?, start_cursor: number[] }
+local function handler(bufnr, curr_node, lsp_name, opts, source)
   if curr_node.is_root then
     if curr_node.children then
       local curr_line = vim.api.nvim_win_get_cursor(0)[1]
@@ -228,7 +266,8 @@ local function handler(bufnr, curr_node, lsp_name, opts)
   display.new({
     for_buf = bufnr,
     for_win = vim.api.nvim_get_current_win(),
-    start_cursor = vim.api.nvim_win_get_cursor(vim.api.nvim_get_current_win()),
+    start_buf = source.start_buf,
+    start_cursor = source.start_cursor,
     focus_node = curr_node,
     config = config,
     lsp_name = lsp_name,

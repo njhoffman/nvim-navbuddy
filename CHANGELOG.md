@@ -6,6 +6,21 @@ All notable changes to this fork are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-11-05
+
+### Changed
+
+- `open(bufnr)` for a buffer that isn't current uses a window already showing it, or shows it in the current window. Closing with `q` or `<esc>` then returns to the previous buffer.
+
+### Fixed
+
+- `open(bufnr)` requests symbols for that buffer rather than the current one.
+- Live buffer switching retries while the server reports errors, as opening does.
+- Each open no longer leaves a `VimResized` autocmd behind.
+- Names with multibyte characters are padded and shortened by display width and are never cut mid-character, and node markers stay inside the window.
+- The title is centered correctly, its icons are highlighted, and long paths shorten by display width.
+- The `hl-icon` theme highlights the whole icon.
+
 ## [0.2.2] - 2026-11-05
 
 ### Fixed

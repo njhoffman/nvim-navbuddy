@@ -38,7 +38,7 @@ Reviewed: 2026-11-05
   `Client.is_stopped` is confirmed to be a function; the two-client flow itself was not run.
   Each new client removes earlier ones, so the chooser menu and `lsp.preference` rarely get more than one client to work with. `table.remove` inside `ipairs` also skips entries.
   Fix: call the method and iterate backward. Also covers the "test with multiple LSP servers" note in `DEVELOPMENT_NOTES.md`.
-- [ ] **`open(bufnr)` mishandles a buffer that isn't current.** (p2) [bug] `init.lua:154` calls `navic.request_symbol`, which asks about the current buffer instead of `bufnr`. Its `file_uri` argument doesn't help, because navic nests it as `textDocument.textDocument`.
+- [x] **`open(bufnr)` mishandles a buffer that isn't current.** (p2) [bug] `init.lua:154` calls `navic.request_symbol`, which asks about the current buffer instead of `bufnr`. Its `file_uri` argument doesn't help, because navic nests it as `textDocument.textDocument`.
   The handler also takes its window and cursor from the current window (`init.lua:203`, `:230-231`), so the display would pair them with the wrong buffer.
   Fix: send the request directly, as `display:reload_buffer` does, and use a window showing `bufnr` or open it in the current one.
 - [x] **`setup()` drops `theme` and `integrations`.** (p2) [bug] Neither key is merged into the config (`init.lua:264-316`).
@@ -64,12 +64,12 @@ Reviewed: 2026-11-05
   Reproduced: `darken("#100520", 0)` returns `#010520` and `darken("#0a0b0c", 0)` returns `#abc` (`highlights.lua:85-88`).
   `file.lua:30` also passes `file_hl.foreground` unchecked, and `darken(nil, 50)` errors when an icon highlight has no fg.
   Fix: `string.format("#%02x%02x%02x", r, g, b)` and a nil guard, with spec cases for both.
-- [ ] **VimResized autocmds leak on every open.** (p2) [bug] `buffer = self.forbuf` is a misspelled field, so it is nil and the autocmd is global (`display/menu.lua:175-178`).
+- [x] **VimResized autocmds leak on every open.** (p2) [bug] `buffer = self.forbuf` is a misspelled field, so it is nil and the autocmd is global (`display/menu.lua:175-178`).
   Only buffer-local autocmds are cleared, so one more accumulates per open, and each keeps its display object alive.
   Fix: delete the autocmd in `close()`, or use a per-display augroup.
 - [ ] **Remaining deprecated APIs.** (p2) [chore] `vim.lsp.get_buffers_by_client_id` (`init.lua:343`) is deprecated for removal in 0.13, and `nvim_buf_clear_highlight` remains at `display/menu.lua:410`.
   Fix: use `client.attached_buffers` and `nvim_buf_clear_namespace`.
-- [ ] **Title and list widths use byte counts.** (p2) [bug] Multibyte names and icons get wrong padding, can be cut mid-character, and the title centers off target.
+- [x] **Title and list widths use byte counts.** (p2) [bug] Multibyte names and icons get wrong padding, can be cut mid-character, and the title centers off target.
   `buffer/lsp.lua:15-19` and `buffer/title.lua:47-57` use `#` and `string.sub`.
   `string.rep("", indent, " ")` at `title.lua:92` returns one space fewer than `indent`, so the title highlights are off by one. Should be `string.rep(" ", indent)`.
   Fix: use `vim.fn.strdisplaywidth` and `vim.fn.strcharpart`.

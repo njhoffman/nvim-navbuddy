@@ -3,7 +3,7 @@ local nui_popup = require("nui.popup")
 local nui_layout = require("nui.layout")
 local nui_text = require("nui.text")
 
--- local utils = require("nvim-navbuddy.utils")
+local utils = require("nvim-navbuddy.utils")
 local state = require("nvim-navbuddy.state")
 local buffer = require("nvim-navbuddy.buffer")
 local border = require("nvim-navbuddy.border")
@@ -145,10 +145,9 @@ function display:new(obj)
     end,
   })
 
-  vim.api.nvim_create_autocmd("VimResized", {
+  obj.resize_autocmd = vim.api.nvim_create_autocmd("VimResized", {
     group = augroup,
-    buffer = self.forbuf,
-    callback = function(arg)
+    callback = function()
       if
         obj.state.leaving_window_for_action == false
         and obj.state.leaving_window_for_reorientation == false
@@ -489,15 +488,12 @@ function display:reload_buffer(bufnr, request_id, confirm)
 
   local navic = require("nvim-navic.lib")
 
-  -- navic.request_symbol can't be used here: without a URI it asks about the
-  -- current buffer, which is the Navbuddy window, and it nests a URI it is given.
-  local params = { textDocument = { uri = vim.uri_from_bufnr(bufnr) } }
-  local function on_response(err, symbols)
-    if request_id ~= self.switch_request_id or not vim.api.nvim_win_is_valid(self.for_win) then
+  utils.request_document_symbols(client, bufnr, function(err, symbols)
+    if not vim.api.nvim_win_is_valid(self.for_win) then
       return
     end
 
-    if err or not vim.api.nvim_buf_is_loaded(bufnr) then
+    if err then
       vim.notify("Could not get symbols for buffer", vim.log.levels.WARN)
       return
     end
@@ -516,13 +512,11 @@ function display:reload_buffer(bufnr, request_id, confirm)
     if confirm then
       self:confirm_source()
     end
-  end
-
-  if vim.fn.has("nvim-0.11") == 1 then
-    client:request("textDocument/documentSymbol", params, on_response, bufnr)
-  else
-    client.request("textDocument/documentSymbol", params, on_response, bufnr)
-  end
+  end, {
+    is_cancelled = function()
+      return request_id ~= self.switch_request_id
+    end,
+  })
 end
 
 function display:commit_buffer_switch(bufnr, focus_node, lsp_name)
@@ -609,6 +603,10 @@ end
 
 function display:close()
   self.state.closed = true
+  if self.resize_autocmd then
+    pcall(vim.api.nvim_del_autocmd, self.resize_autocmd)
+    self.resize_autocmd = nil
+  end
   self.switch_request_id = (self.switch_request_id or 0) + 1
   self.layout:unmount()
   self:clear_highlights()

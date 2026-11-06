@@ -1,6 +1,19 @@
 local navic = require('nvim-navic.lib')
 local buf_utils = require('nvim-navbuddy.buffer.utils')
 local state = require('nvim-navbuddy.state')
+local utils = require('nvim-navbuddy.utils')
+
+--- Cells at the end of a line that the node marker draws over.
+local function marker_width(config)
+  if not config.node_markers.enabled then
+    return 0
+  end
+  local width = 0
+  for _, icon in pairs(config.node_markers.icons) do
+    width = math.max(width, vim.fn.strdisplaywidth(icon))
+  end
+  return width
+end
 
 local function fill_lsp(buf, node, config)
   local cursor_pos = vim.api.nvim_win_get_cursor(buf.winid)
@@ -8,15 +21,9 @@ local function fill_lsp(buf, node, config)
 
   local parent = node.parent
   local lines = {}
-  local bufwidth = buf._.size.width
+  local text_width = buf._.size.width - marker_width(config)
   for _, child_node in ipairs(parent.children) do
-    local text = ' ' .. config.icons[child_node.kind] .. child_node.name
-    if #text > bufwidth then
-      text = string.sub(text, 0, bufwidth - 1) .. '…'
-    end
-    local spacing = bufwidth - #text
-    text = text .. string.rep(' ', spacing)
-    table.insert(lines, text)
+    table.insert(lines, utils.fit_width(' ' .. config.icons[child_node.kind] .. child_node.name, text_width))
   end
 
   vim.bo[buf.bufnr].modifiable = true
@@ -53,7 +60,14 @@ local function fill_lsp(buf, node, config)
         })
       end
     elseif config.theme == 'hl-icon' then
-      require("nvim-navbuddy.hl").add_highlight(buf.bufnr, state.ns, 'Navbuddy' .. sfx, i - 1, 2, 4)
+      require("nvim-navbuddy.hl").add_highlight(
+        buf.bufnr,
+        state.ns,
+        'Navbuddy' .. sfx,
+        i - 1,
+        1,
+        1 + #config.icons[child_node.kind]
+      )
     end
   end
   --  fill_lsp   …   if   if   vim.api.nvim_buf_set_extmark   virt_text
