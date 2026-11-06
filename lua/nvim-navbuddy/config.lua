@@ -80,7 +80,7 @@ local config = {
     size = { width = 80 }, -- no height: fit the content between min_items and max_height
     position = "100%",
     min_items = 5, -- fewest list rows to show
-    max_height = "30%", -- tallest the window gets, including its title and borders
+    max_height = "21%", -- tallest the window gets, including its title and borders
     scrolloff = nil,
     winblend = nil, -- winblend value [0-100 or nil] (transparency)
     sections = {

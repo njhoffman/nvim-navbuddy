@@ -201,7 +201,7 @@ nvim --headless -c "lua require('nvim-navbuddy')" -c "qa"
 ## Known Issues / TODO
 
 - [ ] Test with multiple LSP servers on same buffer
-- [ ] Add error handling for buffers without LSP
+- [x] Add error handling for buffers without LSP
 - [ ] Consider adding visual indicator when in buffer selection mode
 - [ ] Document buffer selection in help docs
 - [ ] Test with very long buffer lists

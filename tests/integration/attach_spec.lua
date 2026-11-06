@@ -286,6 +286,24 @@ describe("attached clients", function()
       assert.equals(source_buf, vim.api.nvim_win_get_buf(source_win))
     end)
 
+    it("says so when the buffer has no symbols", function()
+      symbols_to_send = {}
+      local messages = {}
+      local saved_notify = vim.notify
+      vim.notify = function(message, level)
+        table.insert(messages, { message = message, level = level })
+      end
+
+      navbuddy.open(other_buf)
+      local notified = vim.wait(500, function()
+        return messages[1] ~= nil
+      end, 5)
+      vim.notify = saved_notify
+
+      assert.is_true(notified)
+      assert.same({ { message = "No symbols found in buffer", level = vim.log.levels.INFO } }, messages)
+    end)
+
     it("retries the same buffer after a server error", function()
       errors_to_send = 1
 

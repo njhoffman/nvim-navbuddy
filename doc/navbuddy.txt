@@ -11,6 +11,7 @@ TABLE OF CONTENTS
   Installation ....................................... |navbuddy-installation|
   Usage ..................................................... |navbuddy-usage|
   Commands ..................................... |:Navbuddy| |navbuddy-commands|
+  Focus modes ........................................ |navbuddy-focus-modes|
   Config ................................................... |navbuddy-config|
   API ......................................................... |navbuddy-api|
   Actions ................................................. |navbuddy-actions|
@@ -23,7 +24,7 @@ REQUIREMENTS
 - nvim-lspconfig: `https://github.com/neovim/nvim-lspconfig`
 - nvim-navic: `https://github.com/SmiteshP/nvim-navic`
 - nui.nvim: `https://github.com/MunifTanjim/nui.nvim`
-- Neovim: 0.8 or above
+- Neovim: 0.10 or above
 
 OPTIONAL REQUIREMENTS
 
@@ -40,7 +41,7 @@ INSTALLATION
   {
     "neovim/nvim-lspconfig",
     dependencies = {
-      "hasansujon786/nvim-navbuddy",
+      "njhoffman/nvim-navbuddy",
       opts = { lsp = { auto_attach = true } }
       dependencies = {
         "SmiteshP/nvim-navic",
@@ -79,6 +80,26 @@ keybindings are:
 <
 root~
 Open navbuddy with root node, the first node left of current node.
+
+------------------------------------------------------------------------------
+                                                        *navbuddy-focus-modes*
+FOCUS MODES
+
+Buffer focus~
+Press `h` at the top level to focus the buffer list. The other sections dim.
+
+- `j`/`k` move through the list and switch to the selected buffer once its
+  symbols arrive. Buffers with no LSP server or no symbols are not switched to.
+- `h` keeps the current buffer.
+- `l` returns to normal navigation.
+- `q`/`<esc>` close Navbuddy and return to the original buffer and cursor.
+
+Preview focus~
+Press `l` on a node with no children to show its source in the right section.
+The other sections dim.
+
+- `h` returns to normal navigation.
+- `j`/`k` return to normal navigation and move to the next or previous sibling.
 
 ------------------------------------------------------------------------------
                                                                *navbuddy-config*
@@ -139,7 +160,7 @@ node_markers: table
       size = { width = 80 }, -- Without a height, fit the content. Set a height, or a
                              -- percentage for both such as "60%", for a fixed size.
       min_items = 5,         -- Fewest list rows to show
-      max_height = "30%",    -- Tallest the window gets, including title and borders
+      max_height = "21%",    -- Tallest the window gets, including title and borders
       position = "100%",     -- Or table format example: { row = "100%", col = "0%"}
       scrolloff = nil,       -- scrolloff value within navbuddy window
       sections = {
@@ -473,6 +494,8 @@ available.
 `NavbuddyScope` - highlight for scope of context in source buffer
 `NavbuddyFloatBorder` - Floatborder highlight
 `NavbuddyNormalFloat` - Float normal highlight
+`NavbuddyNormalFloatDim` - Dimmed float normal (used in focus modes)
+`NavbuddyFloatBorderDim` - Dimmed float border (used in focus modes)
 
 The following highlights are are used to highlight elements in the navbuddy
 window according to their type. If you have "NavicIcons<type>" highlights

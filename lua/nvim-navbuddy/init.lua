@@ -14,7 +14,7 @@
 --- - nvim-lspconfig: `https://github.com/neovim/nvim-lspconfig`
 --- - nvim-navic: `https://github.com/SmiteshP/nvim-navic`
 --- - nui.nvim: `https://github.com/MunifTanjim/nui.nvim`
---- - Neovim: 0.8 or above
+--- - Neovim: 0.10 or above
 ---
 ---@text OPTIONAL REQUIREMENTS
 ---
@@ -31,7 +31,7 @@
 ---   {
 ---     "neovim/nvim-lspconfig",
 ---     dependencies = {
----       "hasansujon786/nvim-navbuddy",
+---       "njhoffman/nvim-navbuddy",
 ---       opts = { lsp = { auto_attach = true } }
 ---       dependencies = {
 ---         "SmiteshP/nvim-navic",
@@ -72,6 +72,26 @@
 --- Open navbuddy with root node, the first node left of current node.
 ---@tag :Navbuddy navbuddy-commands
 ---@toc_entry Commands
+
+---@text FOCUS MODES
+---
+--- Buffer focus~
+--- Press `h` at the top level to focus the buffer list. The other sections dim.
+---
+--- - `j`/`k` move through the list and switch to the selected buffer once its
+---   symbols arrive. Buffers with no LSP server or no symbols are not switched to.
+--- - `h` keeps the current buffer.
+--- - `l` returns to normal navigation.
+--- - `q`/`<esc>` close Navbuddy and return to the original buffer and cursor.
+---
+--- Preview focus~
+--- Press `l` on a node with no children to show its source in the right section.
+--- The other sections dim.
+---
+--- - `h` returns to normal navigation.
+--- - `j`/`k` return to normal navigation and move to the next or previous sibling.
+---@tag navbuddy-focus-modes
+---@toc_entry Focus modes
 
 local navic = require("nvim-navic.lib")
 local nui_menu = require("nui.menu")
@@ -185,6 +205,7 @@ local function request(for_buf, handler, opts)
       navic.update_data(for_buf, symbols or {})
       local tree = navic.get_tree(for_buf)
       if not (tree and tree.children and tree.children[1]) then
+        vim.notify("No symbols found in buffer", vim.log.levels.INFO)
         return
       end
 

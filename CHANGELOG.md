@@ -6,6 +6,19 @@ All notable changes to this fork are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-06
+
+### Changed
+
+- `window.max_height` now defaults to `"21%"` instead of `"30%"`, so the window is shorter by default and still grows with the editor.
+- `:Navbuddy` says "No symbols found in buffer" instead of doing nothing when a buffer has no symbols.
+
+### Fixed
+
+- The README and help file state the real minimum Neovim version, 0.10, and their install snippets point to this fork.
+- The help file documents buffer and preview focus modes and the dimmed highlights.
+- Removed placeholder text from the README requirements.
+
 ## [0.4.0] - 2026-11-06
 
 ### Changed

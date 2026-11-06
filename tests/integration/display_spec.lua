@@ -328,7 +328,7 @@ describe("display", function()
     end)
 
     it("fits a list between the limits", function()
-      assert.equals(7, mid_height(open_with_items(7)))
+      assert.equals(7, mid_height(open_with_items(7, { window = { max_height = "30%" } })))
     end)
 
     it("stops at max_height and lets a long list scroll", function()
@@ -348,6 +348,15 @@ describe("display", function()
       assert.equals(3, mid_height(open_with_items(1, { window = { min_items = 3 } })))
       current:close()
       assert.is_true(mid_height(open_with_items(50, { window = { max_height = "60%" } })) > 12)
+    end)
+
+    it("defaults to 14 rows on a 68-row editor and grows with a taller one", function()
+      vim.o.lines = 68
+      assert.equals(11, mid_height(open_with_items(50)))
+      current:close()
+
+      vim.o.lines = 100
+      assert.equals(18, mid_height(open_with_items(50)))
     end)
 
     it("takes only the title and the line above the lists from max_height", function()
@@ -371,7 +380,7 @@ describe("display", function()
       })
       vim.api.nvim_buf_set_lines(source_buf, 0, -1, false, mock.source_lines(root))
 
-      assert.equals(6, mid_height(open(root.children[1])))
+      assert.equals(6, mid_height(open(root.children[1], { window = { max_height = "30%" } })))
     end)
 
     it("resizes as navigation changes the lists and stays at the bottom", function()
@@ -391,7 +400,7 @@ describe("display", function()
         { name = "second" },
       })
       vim.api.nvim_buf_set_lines(source_buf, 0, -1, false, mock.source_lines(root))
-      local display = open(root.children[2])
+      local display = open(root.children[2], { window = { max_height = "30%" } })
       local bottom = bottom_row(display)
       assert.equals(5, mid_height(display))
 

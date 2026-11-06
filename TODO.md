@@ -95,14 +95,14 @@ Reviewed: 2026-11-05
 
 ## 3. Documentation
 
-- [ ] **Minimum Neovim version is wrong.** (p2) [docs] README and `init.lua:17` say 0.8, but `vim.lsp.get_clients` needs 0.10.
+- [x] **Minimum Neovim version is wrong.** (p2) [docs] README and `init.lua:17` say 0.8, but `vim.lsp.get_clients` needs 0.10.
   Fix: state the real minimum, and test it in CI.
-- [ ] **Install snippets point to other repos.** (p2) [docs] README uses `SmiteshP/nvim-navbuddy` and `init.lua:35` uses `hasansujon786/nvim-navbuddy`, so following them installs a version without this fork's features.
+- [x] **Install snippets point to other repos.** (p2) [docs] README uses `SmiteshP/nvim-navbuddy` and `init.lua:35` uses `hasansujon786/nvim-navbuddy`, so following them installs a version without this fork's features.
   `.github/FUNDING.yml` also still names the upstream author, which may be intentional.
-- [ ] **Remove placeholder text from the README requirements.** (p3) [docs] `README.md:14-21` has a stray `**test**` heading and a nested "item one" list, and the section doesn't list `nvim-web-devicons` as optional.
+- [x] **Remove placeholder text from the README requirements.** (p3) [docs] `README.md:14-21` has a stray `**test**` heading and a nested "item one" list, and the section doesn't list `nvim-web-devicons` as optional.
 - [x] **README config does not match the defaults.** (p2) [docs] It shows `preview = "leaf"`, but that line is commented out in `config.lua:100`, so preview is off by default. It also shows `t` as `actions.telescope` where the default is `fuzzy_find`.
   Decide which `preview` default is intended; it interacts with preview focus mode.
-- [ ] **Help file omits fork features.** (p2) [docs] `doc/navbuddy.txt` has no mention of buffer focus mode, preview focus mode or the `*Dim` highlights, because it is generated from the stale `ui.lua`.
+- [x] **Help file omits fork features.** (p2) [docs] `doc/navbuddy.txt` has no mention of buffer focus mode, preview focus mode or the `*Dim` highlights, because it is generated from the stale `ui.lua`.
   Fix: point `scripts/minidoc.lua` at `highlights.lua`, document both modes, and regenerate.
 - [x] **CLAUDE.md describes modules that are not wired in.** (p3) [docs] It presents `display/title.lua` as the title bar and `state.lua` as live global state, but the title popup is built in `display/menu.lua` and clients live in `init.lua`.
 - [ ] **Move the known-issues list out of `DEVELOPMENT_NOTES.md`.** (p3) [docs] Its "Known Issues / TODO" section duplicates this file. Replace it with a pointer here.
@@ -127,7 +127,7 @@ Reviewed: 2026-11-05
 
 - [ ] **`hide_empty` section option isn't implemented.** (p3) [feature] `~/.config/nvim/lua/configs/nvim-navbuddy.lua` sets `sections.left.hide_empty = true`, but no code reads it.
   Implement it or remove it from that config.
-- [ ] **Report why nothing opened.** (p2) [feature] `:Navbuddy` returns silently when a buffer has no symbols (`init.lua:215-217`).
+- [x] **Report why nothing opened.** (p2) [feature] `:Navbuddy` returns silently when a buffer has no symbols (`init.lua:215-217`).
   Fix: notify at INFO level. Also covers the "error handling" note in `DEVELOPMENT_NOTES.md`.
 - [ ] **Switch to buffers whose LSP is still starting.** (p3) [feature] Selecting an unloaded buffer loads it, but its server usually hasn't attached yet, so the first press warns and only a later press switches.
   Fix: wait for `LspAttach` on that buffer for a short time before warning.

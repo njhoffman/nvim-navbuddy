@@ -7,18 +7,11 @@ https://user-images.githubusercontent.com/43147494/227758807-13a614ff-a09d-4be0-
 
 ## ⚡️ Requirements
 
-* Neovim >= 0.8.0
+* Neovim >= 0.10.0
 * [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig)
 * [nvim-navic](https://github.com/SmiteshP/nvim-navic)
 * [nui.nvim](https://github.com/MunifTanjim/nui.nvim)
-**test**
-
-* item one
-* item two
-  * item three
-     * item four
-         * item five
-
+* [nvim-web-devicons](https://github.com/nvim-tree/nvim-web-devicons) (optional): file icons in the buffer list
 
 ## 📦 Installation
 
@@ -28,7 +21,7 @@ Install the plugin with your preferred package manager:
 
 ```lua
 use {
-    "SmiteshP/nvim-navbuddy",
+    "njhoffman/nvim-navbuddy",
     requires = {
         "neovim/nvim-lspconfig",
         "SmiteshP/nvim-navic",
@@ -47,7 +40,7 @@ Plug "SmiteshP/nvim-navic"
 Plug "MunifTanjim/nui.nvim"
 Plug "numToStr/Comment.nvim",        " Optional
 Plug "nvim-telescope/telescope.nvim" " Optional
-Plug "SmiteshP/nvim-navbuddy"
+Plug "njhoffman/nvim-navbuddy"
 Plug "numToStr/Comment.nvim",        " Optional
 Plug "echasnovski/mini.comment",     " Optional
 Plug "nvim-telescope/telescope.nvim" " Optional
@@ -64,7 +57,7 @@ return {
     "neovim/nvim-lspconfig",
     dependencies = {
         {
-            "SmiteshP/nvim-navbuddy",
+            "njhoffman/nvim-navbuddy",
             dependencies = {
                 "SmiteshP/nvim-navic",
                 "MunifTanjim/nui.nvim"
@@ -124,7 +117,7 @@ navbuddy.setup {
                             -- for both such as "60%", for a fixed size.
         position = "100%",  -- Or table format example: { row = "100%", col = "0%"}
         min_items = 5,      -- Fewest list rows to show
-        max_height = "30%", -- Tallest the window gets, including its title and borders
+        max_height = "21%", -- Tallest the window gets, including its title and borders
         scrolloff = nil,    -- scrolloff value within navbuddy window
         sections = {
             left = {

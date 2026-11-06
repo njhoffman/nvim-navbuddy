@@ -7,8 +7,8 @@
 --- `NavbuddyScope` - highlight for scope of context in source buffer
 --- `NavbuddyFloatBorder` - Floatborder highlight
 --- `NavbuddyNormalFloat` - Float normal highlight
---- `NavbuddyNormalFloatDim` - Dimmed float normal (used in buffer focus mode)
---- `NavbuddyFloatBorderDim` - Dimmed float border (used in buffer focus mode)
+--- `NavbuddyNormalFloatDim` - Dimmed float normal (used in focus modes)
+--- `NavbuddyFloatBorderDim` - Dimmed float border (used in focus modes)
 ---
 --- The following highlights are are used to highlight elements in the navbuddy
 --- window according to their type. If you have "NavicIcons<type>" highlights
